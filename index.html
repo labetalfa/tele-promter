@@ -354,8 +354,8 @@ input[type=color]::-webkit-color-swatch{border:none;border-radius:3px}
   .pt{font-size:26px}
   .ct{padding:40vw 6% 40vw}
 
-  /* PiP smaller */
-  .pip{width:130px;height:73px}
+  /* PiP smaller on mobile */
+  .pip{width:110px;height:62px;border-radius:10px}
 
   /* Countdown smaller */
   .cdn{font-size:90px}
@@ -686,7 +686,7 @@ const S = {
   pos:0, max:0, raf:null, lt:null, ms:0,
   spd:30, theme:'def',
   camOn:false, recOn:false, recTs:null, recIv:null,
-  chunks:[], mr:null, stream:null, blob:null, camPos:'tr',
+  chunks:[], mr:null, stream:null, blob:null, camPos:'br',
 };
 
 /* ── DOM ── */
@@ -1015,6 +1015,7 @@ async function toggleCam(){
   pip.style.display='block'; pipNo.style.display='flex'; camv.style.display='none';
   $('cam-btn').classList.add('hi');
   cInfo.innerHTML='Kamera <strong>bağlanıyor…</strong>';
+  syncCamUI(false,false);
   try{
     const s=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:true
@@ -1028,9 +1029,11 @@ async function toggleCam(){
     const mn=$('mn-cam'),ml=$('mn-cam-lbl');
     if(mn) mn.classList.add('gn');
     if(ml) ml.textContent='Kapat';
+    syncCamUI(true,false);
   }catch(e){
     pip.style.display='none'; $('cam-btn').classList.remove('hi');
     cInfo.textContent='Erişim reddedildi'; cInd.className='c-ind';
+    syncCamUI(false,false);
     alert('Kamera izni verin:\nTarayıcı → Site Ayarları → Kamera: İzin Ver');
   }
 }
@@ -1045,11 +1048,35 @@ function stopCam(){
   const mn=$('mn-cam'),ml=$('mn-cam-lbl');
   if(mn) mn.classList.remove('gn','rd');
   if(ml) ml.textContent='Kamera';
+  syncCamUI(false,false);
+}
+
+/* mobil kamera UI senkronizasyonu */
+function syncCamUI(camOn, recOn){
+  const indM=$('c-ind-m'), infoM=$('c-info-m');
+  const togBtn=$('cam-tog-m'), togLbl=$('cam-tog-m-lbl');
+  const recBtn=$('rec-tog-m'), recLbl=$('rec-tog-m-lbl'), recIcon=$('rec-tog-m-icon');
+  const badgeM=$('rec-badge-m');
+
+  if(indM){ indM.className='c-ind'+(camOn?(recOn?' rec':' on'):''); }
+  if(infoM){ infoM.innerHTML = camOn ? (recOn?'Kayıt <strong>devam ediyor</strong>':'Kamera <strong>aktif</strong>') : 'Kamera kapalı'; }
+  if(togLbl){ togLbl.textContent = camOn ? 'Kamerayı Kapat' : 'Kamerayı Aç'; }
+  if(togBtn){ togBtn.style.color = camOn ? 'var(--gr)' : ''; togBtn.style.borderColor = camOn ? 'rgba(63,168,106,.4)' : ''; }
+  if(recBtn){ recBtn.style.display = camOn ? 'flex' : 'none'; }
+  if(recLbl){ recLbl.textContent = recOn ? 'Durdur' : 'Kayıt Başlat'; }
+  if(recIcon){ recIcon.innerHTML = recOn ? '<rect x="3" y="3" width="10" height="10" rx="1"/>' : '<circle cx="8" cy="8" r="5.5"/>'; }
+  if(recBtn){ recBtn.style.color = recOn ? 'var(--rd)' : ''; recBtn.style.borderColor = recOn ? 'rgba(201,74,74,.4)' : ''; }
+  if(badgeM){ badgeM.style.display = recOn ? 'inline-flex' : 'none'; }
+  // konum butonları
+  ['tl','tr','bl','br'].forEach(k=>{ const b=$('cp-'+k+'-m'); if(b) b.classList.toggle('on', k===S.camPos); });
 }
 function movePip(p){
   S.camPos=p;
-  ['tl','tr','bl','br'].forEach(k=>{ const b=$('cp-'+k); if(b) b.classList.toggle('on',k===p); });
-  const pad=14;
+  ['tl','tr','bl','br'].forEach(k=>{
+    const d=$('cp-'+k); if(d) d.classList.toggle('on',k===p);
+    const m=$('cp-'+k+'-m'); if(m) m.classList.toggle('on',k===p);
+  });
+  const pad=10;
   pip.style.removeProperty('top'); pip.style.removeProperty('bottom');
   pip.style.removeProperty('left'); pip.style.removeProperty('right');
   if(p==='tl'){pip.style.top=pad+'px';pip.style.left=pad+'px';}
@@ -1072,7 +1099,12 @@ async function startRec(){
   try{
     const mr=new MediaRecorder(S.stream,mime?{mimeType:mime}:{});
     mr.ondataavailable=e=>{ if(e.data.size>0) S.chunks.push(e.data); };
-    mr.onstop=()=>{ S.blob=new Blob(S.chunks,{type:mime||'video/webm'}); $('dl-btn').style.display='flex'; $('dl-btn').classList.add('ok'); };
+    mr.onstop=()=>{
+      S.blob=new Blob(S.chunks,{type:mime||'video/webm'});
+      $('dl-btn').style.display='flex'; $('dl-btn').classList.add('ok');
+      const dlm=$('dl-btn-m'); if(dlm) dlm.style.display='flex';
+      dlRec(); // otomatik indir
+    };
     mr.start(200); S.mr=mr;
   }catch(e){ alert('Kayıt başlatılamadı: '+e.message); return; }
   S.recOn=true; S.recTs=Date.now();
@@ -1081,6 +1113,7 @@ async function startRec(){
   cInd.classList.add('rec'); recBadge.style.display='inline-flex'; rdot.classList.add('on');
   const mn=$('mn-cam'); if(mn) mn.classList.add('rd');
   S.recIv=setInterval(updRecT,1000);
+  syncCamUI(true,true);
 }
 function stopRec(){
   if(S.mr&&S.mr.state!=='inactive') S.mr.stop();
@@ -1090,11 +1123,14 @@ function stopRec(){
   cInd.classList.remove('rec'); cInd.classList.add('on');
   recBadge.style.display='none'; rdot.classList.remove('on'); rtm.textContent='00:00';
   const mn=$('mn-cam'); if(mn) mn.classList.remove('rd');
+  syncCamUI(true,false);
+  // onstop → otomatik indir + mobil indirme butonu göster
 }
 function updRecT(){
   const s=Math.floor((Date.now()-S.recTs)/1000);
   const t=(Math.floor(s/60)+'').padStart(2,'0')+':'+(s%60+'').padStart(2,'0');
   recT.textContent=t; rtm.textContent=t;
+  const tm=$('rec-t-m'); if(tm) tm.textContent=t;
 }
 function dlRec(){
   if(!S.blob) return;
@@ -1191,6 +1227,36 @@ function buildSettingsDr(){
   </div>
 </div>
 <div class="cs">
+  <div class="cs-t">📹 Kamera & Kayıt</div>
+  <div class="cam-row" id="cam-row-m">
+    <div class="c-ind" id="c-ind-m"></div>
+    <div class="c-info" id="c-info-m">Kamera kapalı</div>
+    <span class="rec-badge" id="rec-badge-m" style="display:none">● <span id="rec-t-m">00:00</span></span>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button id="cam-tog-m" onclick="toggleCam()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border-radius:var(--r1);border:1px solid var(--b1);background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;transition:var(--tr)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1 4.5A1.5 1.5 0 012.5 3h8A1.5 1.5 0 0112 4.5v.382l2.553-1.276A.5.5 0 0115 4v8a.5.5 0 01-.447.894L12 11.618V12a1.5 1.5 0 01-1.5 1.5h-8A1.5 1.5 0 011 12V4.5z"/></svg>
+      <span id="cam-tog-m-lbl">Kamerayı Aç</span>
+    </button>
+    <button id="rec-tog-m" onclick="toggleRec()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border-radius:var(--r1);border:1px solid var(--b1);background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;transition:var(--tr)">
+      <svg id="rec-tog-m-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="5.5"/></svg>
+      <span id="rec-tog-m-lbl">Kayıt Başlat</span>
+    </button>
+  </div>
+  <div style="font-size:10px;color:var(--t3);margin-bottom:6px;line-height:1.5">Kamera konumu:</div>
+  <div class="tg" style="margin-bottom:8px">
+    <button class="tp" id="cp-tl-m" onclick="movePip('tl')">↖ Sol Üst</button>
+    <button class="tp" id="cp-tr-m" onclick="movePip('tr')">↗ Sağ Üst</button>
+    <button class="tp" id="cp-bl-m" onclick="movePip('bl')">↙ Sol Alt</button>
+    <button class="tp on" id="cp-br-m" onclick="movePip('br')">↘ Sağ Alt</button>
+  </div>
+  <div class="cr"><span class="cl">PiP Opaklığı</span><div class="sw"><input type="range" id="pip-op-m" min="20" max="100" value="90" style="flex:1"><span class="sv" id="pip-op-m-v">90%</span></div></div>
+  <button class="dl-btn ok" id="dl-btn-m" style="display:none;margin-top:6px" onclick="dlRec()">
+    <svg viewBox="0 0 14 14"><path d="M7 1v8M4 7l3 3 3-3M1 11h12v2H1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
+    Kaydı Tekrar İndir
+  </button>
+</div>
+<div class="cs">
   <div class="cs-t">Renk Teması</div>
   <div class="tdots">
     <div class="tdot on" data-t="def" onclick="setTheme('def',this)"></div>
@@ -1218,10 +1284,11 @@ function buildSettingsDr(){
       fn.apply(v);
     });
   };
-  bindM('spd-m','spd-m-v',{fmt:v=>v,apply:v=>{S.spd=Math.round(v);$('spd-sl').value=S.spd;$('spd-v').textContent=S.spd;calcTime();}});
+  bindM('spd-m','spd-m-v',{fmt:v=>Math.round(v),apply:v=>{S.spd=Math.round(v);$('spd-sl').value=S.spd;$('spd-v').textContent=S.spd;calcTime();}});
   bindM('fs-m','fs-m-v',{fmt:v=>v+'px',apply:v=>{pt.style.fontSize=v+'px';$('sl-fs').value=v;$('v-fs').textContent=v+'px';updateScrollMax();}});
   bindM('lh-m','lh-m-v',{fmt:v=>v.toFixed(2),apply:v=>{pt.style.lineHeight=v;$('sl-lh').value=v;$('v-lh').textContent=v.toFixed(2);updateScrollMax();}});
   bindM('bl-m','bl-m-v',{fmt:v=>v+'px',apply:v=>{setBlur(v);$('sl-bl').value=v;$('v-bl').textContent=v+'px';}});
+  bindM('pip-op-m','pip-op-m-v',{fmt:v=>Math.round(v)+'%',apply:v=>{ pip.style.opacity=v/100; }});
 }
 
 function toggleBoldM(){ S.bold=!S.bold; $('b-bold').classList.toggle('on',S.bold); $('b-bold-m').classList.toggle('on',S.bold); pt.style.fontWeight=S.bold?'700':'400'; }
