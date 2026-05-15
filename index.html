@@ -57,6 +57,9 @@
     }
     .tabs button[aria-selected="true"]{background:var(--panel);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.05)}
     .head-actions{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .head-ico{width:22px;height:22px;flex-shrink:0;display:block;pointer-events:none}
+    .head-ico.stroke{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    /* Mobil: ikonları her zaman görünür tut, yazı yerine dokunmatik kare düğme */
     .btn{
       display:inline-flex;align-items:center;justify-content:center;gap:8px;
       padding:9px 12px;border-radius:10px;border:1px solid var(--line);
@@ -204,6 +207,16 @@
       display:flex;align-items:center;justify-content:center;height:100%;font-size:.75rem;color:var(--muted);padding:8px;text-align:center;
     }
     .chip.small-chip{padding:8px;font-size:.9rem;line-height:1;justify-content:center;min-height:40px;border-radius:10px}
+    /* Mobil: sahne üstünde kamera ön↔arka (sadece kamera açıkken görünür) */
+    .cam-switch-fab{
+      display:none;position:absolute;z-index:35;right:max(12px,env(safe-area-inset-right));
+      bottom:calc(132px + env(safe-area-inset-bottom));align-items:center;justify-content:center;flex-direction:column;gap:2px;
+      width:62px;padding:10px 6px;border-radius:16px;cursor:pointer;
+      border:2px solid var(--accent);background:rgba(8,8,12,.92);color:var(--accent);
+      box-shadow:0 8px 28px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);touch-action:manipulation;
+    }
+    .cam-switch-fab svg{width:26px;height:26px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+    .cam-switch-fab .fab-cap{font-size:.58rem;font-weight:700;letter-spacing:.02em;line-height:1;text-align:center;color:var(--text);max-width:100%}
 
     /* Transport */
     .transport{
@@ -236,6 +249,8 @@
       align-items:center;gap:4px;padding:8px 4px;border-radius:12px;font-weight:700;font-size:.68rem;letter-spacing:.04em;
     }
     .mobile-bar button[data-active="true"]{color:var(--accent);background:var(--elev)}
+    .mobile-bar .mb-ico{width:22px;height:22px;flex-shrink:0;opacity:.9}
+    .mobile-bar button[data-active="true"] .mb-ico{opacity:1}
 
     /* Sheets */
     .sheet-backdrop{
@@ -280,8 +295,18 @@
       .app-body .panel{display:none!important}
       .mobile-bar{display:flex}
       .transport .meta{display:none}
-      .head-actions .btn .lbl{display:none}
-      .head-actions #btn-flip-cam-head .flip-lbl{display:inline}
+      .head-actions{margin-left:auto;gap:6px}
+      .head-actions .btn .lbl{display:none!important}
+      .head-actions .btn{padding:10px;width:48px;height:48px;border-radius:14px;min-height:unset;min-width:unset}
+      .head-actions .btn .head-ico{width:24px;height:24px;margin:0}
+      .head-actions .btn.small.primary{background:linear-gradient(180deg,#f0cd6a,var(--accent));border:none;color:#1a1406;box-shadow:0 4px 16px rgba(232,184,74,.35)}
+      .head-actions .btn.small.primary .head-ico{fill:#1a1406;stroke:none}
+      .head-actions .btn.small.ghost{border-color:rgba(232,184,74,.5);background:rgba(232,184,74,.22);color:#f5d78a;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+      #btn-fs{background:var(--elev);border-color:rgba(255,255,255,.22);color:#f0ebe0;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+      /* Kayıt: net kırmızı daire ikon */
+      #btn-rec-top:not([hidden]){background:rgba(255,92,92,.15);border-color:rgba(255,92,92,.55);color:#ff8a8a}
+      /* Yüzen kamera çevir */
+      .cam-switch-fab:not([hidden]){display:flex}
       .tabs button{padding:7px 12px;font-size:.78rem}
     }
     @media (max-width:520px){
@@ -301,14 +326,22 @@
       <button type="button" role="tab" id="tab-prompter" aria-selected="false" data-tab="prompter">Kaydır</button>
     </div>
     <div class="head-actions">
-      <button type="button" class="btn small primary" id="btn-cam-top" aria-pressed="false">
+      <button type="button" class="btn small primary" id="btn-cam-top" aria-pressed="false" title="Kamerayı aç veya kapat" aria-label="Kamerayı aç veya kapat">
+        <svg class="head-ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
         <span class="lbl">Kamera</span>
       </button>
-      <button type="button" class="btn small ghost" id="btn-flip-cam-head" hidden title="Ön / arka kamera geçişi" aria-label="Ön veya arka kameraya geç">
-        <span class="lbl flip-lbl">Arka</span>
+      <button type="button" class="btn small ghost" id="btn-flip-cam-head" hidden title="Ön / arka kamera" aria-label="Ön veya arka kameraya geç">
+        <svg class="head-ico stroke" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99zM17 13h-8.01v-2H17V8l3.99 4L17 16z"/></svg>
+        <span class="lbl flip-lbl">Çevir</span>
       </button>
-      <button type="button" class="btn small ghost icon-only" id="btn-rec-top" aria-label="Kayıt" aria-pressed="false" hidden>●</button>
-      <button type="button" class="btn small" id="btn-fs" aria-pressed="false" title="Tam ekran (F)"><span class="lbl">Tam ekran</span></button>
+      <button type="button" class="btn small ghost icon-only" id="btn-rec-top" aria-label="Kayıt başlat veya durdur" aria-pressed="false" hidden title="Kayıt">
+        <svg class="head-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg>
+        <span class="lbl" style="display:none">Kayıt</span>
+      </button>
+      <button type="button" class="btn small" id="btn-fs" aria-pressed="false" title="Tam ekran (F)" aria-label="Tam ekran">
+        <svg class="head-ico stroke" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M21 3v5h-5M3 21h5v-5M16 21h5v-5"/></svg>
+        <span class="lbl">Tam ekran</span>
+      </button>
     </div>
   </header>
 
@@ -349,6 +382,10 @@
           <video id="pipVideo" muted playsinline autoplay></video>
           <div class="ph" id="pipPh">Kamera bağlanıyor…</div>
         </div>
+        <button type="button" class="cam-switch-fab" id="mob-flip-cam-fab" hidden aria-label="Ön veya arka kamera seç">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99zM17 13h-8.01v-2H17V8l3.99 4L17 16z"/></svg>
+          <span class="fab-cap">Ön ↔ Arka</span>
+        </button>
       </div>
 
       <div class="transport" id="transport">
@@ -384,9 +421,18 @@
   </div>
 
   <nav class="mobile-bar" id="mobileBar" aria-label="Mobil kısayollar">
-    <button type="button" data-sheet="editor">Metin</button>
-    <button type="button" data-sheet="settings">Ayarlar</button>
-    <button type="button" data-sheet="cam">Kamera</button>
+    <button type="button" data-sheet="editor">
+      <svg class="mb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 17h4l2-4 3 6 2-4h5"/><path d="M4 7h16M9 7V5h6v2"/></svg>
+      <span>Metin</span>
+    </button>
+    <button type="button" data-sheet="settings">
+      <svg class="mb-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.9 7.9 0 000-2l2-1.5-2-3.5-2.3 1a8 8 0 00-1.7-1L15 2h-6l-.4 3.4a8 8 0 00-1.7 1l-2.3-1-2 3.5L4.6 11a7.9 7.9 0 000 2l-2 1.5 2 3.5 2.3-1a8 8 0 001.7 1L9 22h6l.4-3.4a8 8 0 001.7-1l2.3 1 2-3.5-2-1.5z"/></svg>
+      <span>Ayarlar</span>
+    </button>
+    <button type="button" data-sheet="cam">
+      <svg class="mb-ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      <span>Kamera</span>
+    </button>
   </nav>
 
   <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
@@ -528,6 +574,7 @@
       btnFlipHead: $('#btn-flip-cam-head'),
       btnRecTop: $('#btn-rec-top'),
       btnFs: $('#btn-fs'),
+      mobFlipFab: $('#mob-flip-cam-fab'),
     };
 
     function toast(msg) {
@@ -791,12 +838,23 @@
     }
 
     function updateCamFlipHeadUi() {
-      if (!els.btnFlipHead) return;
-      els.btnFlipHead.hidden = !state.camOn;
-      const lbl = els.btnFlipHead.querySelector('.flip-lbl');
-      if (lbl) lbl.textContent = state.facing === 'user' ? 'Arkaya geç' : 'Öne geç';
-      els.btnFlipHead.title =
-        state.facing === 'user' ? 'Arka kameraya geç' : 'Ön (selfie) kameraya geç';
+      const tip = state.facing === 'user' ? 'Arka kameraya geç' : 'Ön (selfie) kameraya geç';
+      const shortNext = state.facing === 'user' ? 'Arkaya geç' : 'Öne geç';
+      const show = state.camOn;
+      if (els.btnFlipHead) {
+        els.btnFlipHead.hidden = !show;
+        const lbl = els.btnFlipHead.querySelector('.flip-lbl');
+        if (lbl) lbl.textContent = shortNext;
+        els.btnFlipHead.title = tip;
+        els.btnFlipHead.setAttribute('aria-label', tip);
+      }
+      if (els.mobFlipFab) {
+        els.mobFlipFab.hidden = !show;
+        const cap = els.mobFlipFab.querySelector('.fab-cap');
+        if (cap) cap.textContent = shortNext;
+        els.mobFlipFab.title = tip;
+        els.mobFlipFab.setAttribute('aria-label', tip);
+      }
     }
 
     function setCamLayout(layout) {
@@ -1657,6 +1715,8 @@
       els.btnRecTop.addEventListener('click', toggleRec);
       if (els.btnFlipHead)
         els.btnFlipHead.addEventListener('click', () => void flipCam());
+      if (els.mobFlipFab)
+        els.mobFlipFab.addEventListener('click', () => void flipCam());
       els.btnFs.addEventListener('click', goFullscreen);
 
       els.speed.addEventListener('input', () => {
@@ -1731,6 +1791,7 @@
       /* Manual scroll drag on stage while paused */
       els.stage.addEventListener('pointerdown', (e) => {
         if (e.target.closest('.pip')) return;
+        if (e.target.closest('.cam-switch-fab')) return;
         if (state.playing || state.countdown) return;
         state.manualDrag = true;
         state.dragStartY = e.clientY;
