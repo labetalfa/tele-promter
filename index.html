@@ -29,7 +29,8 @@
       --r:12px;--r2:16px;--shadow:0 18px 50px rgba(0,0,0,.45);
       --stage-bg:#050508;--stage-fg:#f6f2e8;
       --band:rgba(232,184,74,.14);--band-line:rgba(232,184,74,.65);
-      --band-h:clamp(76px, 14vh, 160px);--blur:8px;--vignette:.88;
+      --band-h:clamp(76px, 14vh, 160px);--band-fill-op:.92;--rl-line-h:2px;
+      --blur:8px;--vignette:.88;
       --fz:clamp(22px, 2.35vw + 14px, 52px);--lh:1.52;
       --tr:.18s cubic-bezier(.2,.8,.2,1);
     }
@@ -128,8 +129,12 @@
     /* Center column */
     .center{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--shell)}
     .stage-wrap{flex:1;position:relative;min-height:0;background:var(--stage-bg);overflow:hidden;touch-action:none}
+    .stage-wrap.cam-fill-behind{background:transparent}
     .stage-wrap.playing{cursor:none}
-    .viewport{position:absolute;inset:0;overflow:hidden}
+    .viewport{
+      position:absolute;inset:0;overflow:hidden;z-index:3;
+      background:transparent;
+    }
     .mirror-shell{width:100%;min-height:100%;transform-origin:center center;will-change:transform}
     .stage-wrap.mirror-h .mirror-shell{transform:scaleX(-1)}
     .stage-wrap.mirror-v .mirror-shell{transform:scaleY(-1)}
@@ -143,7 +148,7 @@
       font-variation-settings:"opsz" 72;
     }
     .script strong{font-weight:700}
-    .reading-layer{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;z-index:5}
+    .reading-layer{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;z-index:7}
     .rl-top,.rl-bot{flex:1;transition:flex-grow .25s ease}
     .rl-band{
       height:var(--band-h);flex-shrink:0;position:relative;
@@ -152,15 +157,19 @@
     .rl-band::before{
       content:"";position:absolute;left:6%;right:6%;top:0;bottom:0;border-radius:14px;
       background:var(--band);border:1px solid var(--band-line);
+      opacity:var(--band-fill-op,.92);transition:opacity .2s ease;
     }
-    .rl-line{position:absolute;left:4%;right:4%;height:2px;background:var(--band-line);top:50%;transform:translateY(-50%);border-radius:2px}
+    .rl-line{
+      position:absolute;left:4%;right:4%;height:var(--rl-line-h, 2px);
+      background:var(--band-line);top:50%;transform:translateY(-50%);border-radius:2px;
+    }
     .vignette{
-      pointer-events:none;position:absolute;inset:0;z-index:4;
+      pointer-events:none;position:absolute;inset:0;z-index:5;
       background:linear-gradient(to bottom,var(--stage-bg),transparent 18%,transparent 82%,var(--stage-bg));
       opacity:var(--vignette);transition:opacity .25s ease;
     }
     .blur-fade{
-      position:absolute;left:0;right:0;pointer-events:none;z-index:3;
+      position:absolute;left:0;right:0;pointer-events:none;z-index:6;
       height:clamp(72px,12vh,200px);-webkit-backdrop-filter:blur(var(--blur));backdrop-filter:blur(var(--blur));
     }
     .blur-fade.top{top:0;background:linear-gradient(to bottom,var(--stage-bg),transparent);opacity:.9}
@@ -168,14 +177,33 @@
 
     body.reduce-motion *,body.reduce-motion *::before{animation:none!important;transition:none!important}
 
-    .pip{
-      position:absolute;z-index:30;width:min(240px,32vw);aspect-ratio:16/9;background:#000;border-radius:14px;
-      overflow:hidden;border:1px solid rgba(232,184,74,.42);box-shadow:var(--shadow);touch-action:none;
+    .cam-backdrop{
+      position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;border-radius:inherit;
+      opacity:0;transition:opacity .3s ease;
     }
+    .cam-backdrop.on{opacity:1}
+    .cam-backdrop video{
+      position:absolute;width:100%;height:100%;top:50%;left:50%;transform:translate(-50%,-50%);
+      object-fit:cover;display:block;background:#000;
+    }
+    .cam-scrim{
+      position:absolute;inset:0;z-index:2;pointer-events:none;
+      background:linear-gradient(180deg,rgba(5,5,8,.85) 0%,transparent 25%,transparent 75%,rgba(5,5,8,.85) 100%);
+      opacity:0;transition:opacity .25s ease;
+    }
+    .cam-scrim.on{opacity:1}
+    .pip{
+      position:absolute;z-index:30;background:#000;border-radius:14px;
+      overflow:hidden;border:1px solid rgba(232,184,74,.42);box-shadow:var(--shadow);touch-action:none;
+      width:clamp(112px, 26vw, 280px);aspect-ratio:16/9;
+      opacity:var(--pip-ui-op, 1);transition:opacity .2s ease, width .2s ease;
+    }
+    .pip.pip-off{opacity:0;visibility:hidden}
     .pip video{width:100%;height:100%;object-fit:cover;display:block}
     .pip .ph{
       display:flex;align-items:center;justify-content:center;height:100%;font-size:.75rem;color:var(--muted);padding:8px;text-align:center;
     }
+    .chip.small-chip{padding:8px;font-size:.9rem;line-height:1;justify-content:center;min-height:40px;border-radius:10px}
 
     /* Transport */
     .transport{
@@ -293,6 +321,10 @@
 
     <section class="center" id="stage-column">
       <div class="stage-wrap" id="stage" role="region" aria-label="Teleprompter">
+        <div class="cam-backdrop" id="camBackdrop" aria-hidden="true">
+          <video id="camVideoBackdrop" muted playsinline autoplay></video>
+        </div>
+        <div class="cam-scrim" id="camScrim" aria-hidden="true"></div>
         <div class="viewport" id="viewport">
           <div class="mirror-shell" id="mirrorShell">
             <div class="track" id="track">
@@ -401,6 +433,7 @@
 
     const LS_KEY = 'flowprompter_v1';
 
+
     const state = {
       playing: false,
       countdown: false,
@@ -428,6 +461,15 @@
       recOn: false,
       audioOn: true,
       pipCorner: 'tr',
+      camLayout: 'pip',
+      pipSizePct: 26,
+      pipOpacity: 1,
+      fillCamOpacity: 0.45,
+      fillScrimOpacity: 0.38,
+      fillTextGlow: 0.42,
+      bandHeightPx: 140,
+      lineThicknessPx: 2,
+      bandFillOpacity: 0.92,
       stream: null,
       recorder: null,
       chunks: [],
@@ -451,6 +493,9 @@
       pip: $('#pip'),
       pipVideo: $('#pipVideo'),
       pipPh: $('#pipPh'),
+      camBackdrop: $('#camBackdrop'),
+      camVideoBackdrop: $('#camVideoBackdrop'),
+      camScrim: $('#camScrim'),
       taD: $('#textarea-desktop'),
       taM: $('#textarea-mobile'),
       statsD: $('#stats-desktop'),
@@ -572,6 +617,7 @@
       state.lastTs = ts;
       if (dt > 64) dt = 64;
       if (document.hidden) {
+        state.lastTs = 0;
         state.loopRaf = requestAnimationFrame(tick);
         return;
       }
@@ -666,8 +712,148 @@
 
     function seekClientX(clientX) {
       const r = els.progBar.getBoundingClientRect();
-      const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+      const w = r.width || 1;
+      const t = Math.max(0, Math.min(1, (clientX - r.left) / w));
       setPos(t * state.max);
+    }
+
+    function applyFocusChrome() {
+      const h = Math.max(56, Math.min(260, state.bandHeightPx));
+      const th = Math.max(1, Math.min(12, state.lineThicknessPx));
+      document.documentElement.style.setProperty('--band-h', 'clamp(52px, ' + h + 'px, 280px)');
+      document.documentElement.style.setProperty('--rl-line-h', th + 'px');
+      document.documentElement.style.setProperty('--band-fill-op', String(state.bandFillOpacity));
+    }
+
+    function applyFillGlow() {
+      const active = state.camOn && state.camLayout === 'fill';
+      const g = Math.max(0, Math.min(1, state.fillTextGlow));
+      if (active && g > 0.04) {
+        const spread = Math.round(6 + g * 28);
+        const a = Math.min(0.82, 0.2 + g * 0.55);
+        els.script.style.textShadow = '0 0.06em .12em rgba(0,0,0,' + Math.min(.95, a + .15) + '), 0 .12em ' + spread + 'px rgba(0,0,0,' + a + ')';
+      } else {
+        els.script.style.textShadow = 'none';
+      }
+    }
+
+    function syncCamPanelsFromState() {
+      const layouts = '[data-cam-layout]';
+      const keys = ['pip-size', 'pip-op', 'fill-vid-op', 'fill-scrim', 'fill-glow'];
+      [els.settingsRoot, els.settingsMobile, els.camMobile].forEach((panel) => {
+        if (!panel) return;
+        const box = panel.querySelector('.js-cam-settings');
+        if (!box) return;
+        box.querySelectorAll(layouts).forEach((b) => {
+          const on = b.dataset.camLayout === state.camLayout;
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        const pipOpts = box.querySelector('.cam-pip-opts');
+        const fillOpts = box.querySelector('.cam-fill-opts');
+        if (pipOpts) pipOpts.hidden = state.camLayout === 'fill';
+        if (fillOpts) fillOpts.hidden = state.camLayout !== 'fill';
+        keys.forEach((k) => {
+          const inp = box.querySelector('[data-k="' + k + '"]');
+          const lab = box.querySelector('[data-v="' + k + '"]');
+          if (!inp) return;
+          if (k === 'pip-size') {
+            inp.value = String(Math.round(state.pipSizePct));
+            if (lab) lab.textContent = Math.round(state.pipSizePct) + '%';
+          } else if (k === 'pip-op') {
+            inp.value = String(Math.round(state.pipOpacity * 100));
+            if (lab) lab.textContent = Math.round(state.pipOpacity * 100) + '%';
+          } else if (k === 'fill-vid-op') {
+            inp.value = String(Math.round(state.fillCamOpacity * 100));
+            if (lab) lab.textContent = Math.round(state.fillCamOpacity * 100) + '%';
+          } else if (k === 'fill-scrim') {
+            inp.value = String(Math.round(state.fillScrimOpacity * 100));
+            if (lab) lab.textContent = Math.round(state.fillScrimOpacity * 100) + '%';
+          } else if (k === 'fill-glow') {
+            inp.value = String(Math.round(state.fillTextGlow * 100));
+            if (lab) lab.textContent = Math.round(state.fillTextGlow * 100) + '%';
+          }
+        });
+        box.querySelectorAll('[data-pip-pos]').forEach((b) => {
+          b.classList.toggle('on', b.dataset.pipPos === state.pipCorner);
+        });
+      });
+    }
+
+    function setCamLayout(layout) {
+      state.camLayout = layout === 'fill' ? 'fill' : 'pip';
+      syncCamPanelsFromState();
+      applyCamVisuals();
+      scheduleSave();
+    }
+
+    function applyCamVisuals() {
+      const fillActive = state.camOn && state.camLayout === 'fill';
+      els.pip.classList.toggle('pip-off', !state.camOn || fillActive);
+      els.stage.style.setProperty('--pip-ui-op', String(state.pipOpacity));
+      els.pip.style.width = state.pipSizePct + '%';
+      els.camVideoBackdrop.style.opacity = String(state.fillCamOpacity);
+      els.camScrim.style.opacity = fillActive ? String(state.fillScrimOpacity) : '0';
+      els.camBackdrop.style.visibility = fillActive ? 'visible' : 'hidden';
+      els.camBackdrop.classList.toggle('on', fillActive);
+      els.camScrim.classList.toggle('on', fillActive && state.fillScrimOpacity > 0.02);
+      els.stage.classList.toggle('cam-fill-behind', fillActive);
+      applyFillGlow();
+      placePip(state.pipCorner);
+    }
+
+    function onDelegatedCamChange(ev) {
+      const inp = ev.target;
+      if (!(inp instanceof HTMLInputElement)) return;
+      if (!inp.closest('.js-cam-settings') || !inp.dataset.k) return;
+      const k = inp.dataset.k;
+      const v = parseFloat(inp.value);
+      if (k === 'pip-size') {
+        state.pipSizePct = Math.max(15, Math.min(48, Math.round(v)));
+      } else if (k === 'pip-op') {
+        state.pipOpacity = Math.max(0.2, Math.min(1, v / 100));
+      } else if (k === 'fill-vid-op') {
+        state.fillCamOpacity = Math.max(0.08, Math.min(1, v / 100));
+      } else if (k === 'fill-scrim') {
+        state.fillScrimOpacity = Math.max(0, Math.min(0.94, v / 100));
+      } else if (k === 'fill-glow') {
+        state.fillTextGlow = Math.max(0, Math.min(1, v / 100));
+      } else return;
+      syncCamPanelsFromState();
+      applyCamVisuals();
+      scheduleSave();
+    }
+
+    function onDelegatedCamClick(ev) {
+      const ly = ev.target.closest('[data-cam-layout]');
+      if (ly && ly.closest('.js-cam-settings')) {
+        ev.preventDefault();
+        setCamLayout(ly.dataset.camLayout);
+        return;
+      }
+      const pos = ev.target.closest('[data-pip-pos]');
+      if (pos && pos.closest('.js-cam-settings')) {
+        state.pipCorner = pos.dataset.pipPos;
+        [els.settingsRoot, els.settingsMobile, els.camMobile].forEach((panel) => {
+          if (!panel) return;
+          const bx = panel.querySelector('.js-cam-settings');
+          if (!bx) return;
+          bx.querySelectorAll('[data-pip-pos]').forEach((b) =>
+            b.classList.toggle('on', b.dataset.pipPos === state.pipCorner),
+          );
+        });
+        placePip(state.pipCorner);
+        scheduleSave();
+      }
+    }
+
+    function wireCamDelegation() {
+      [els.settingsRoot, els.settingsMobile, els.camMobile].forEach((par) => {
+        if (!par || par.dataset.camWire) return;
+        par.dataset.camWire = '1';
+        par.addEventListener('input', onDelegatedCamChange);
+        par.addEventListener('click', onDelegatedCamClick);
+      });
     }
 
     function buildSettings(html) {
@@ -713,19 +899,75 @@
           </select>
         </div>
         <div class="field">
-          <label>Okuma çizgisi</label>
+          <label>Odak çizgisi ve bölge</label>
           <div class="chip-group">
-            <button type="button" class="chip" data-band="top">Üst</button>
-            <button type="button" class="chip on" data-band="mid">Orta</button>
-            <button type="button" class="chip" data-band="bot">Alt</button>
+            <button type="button" class="chip" data-band="top">Üstte</button>
+            <button type="button" class="chip on" data-band="mid">Ortada</button>
+            <button type="button" class="chip" data-band="bot">Altta</button>
           </div>
-          <div class="row" style="margin-top:10px"><span>Kenar bulanıklığı</span>
+          <div class="row" style="margin-top:10px"><span>Bölge yüksekliği</span>
+            <div class="range-wrap"><input type="range" data-k="band-hpx" min="72" max="240" step="4" value="140" /></div>
+            <span class="val" data-v="band-hpx">140px</span>
+          </div>
+          <div class="row"><span>Çizgi kalınlığı</span>
+            <div class="range-wrap"><input type="range" data-k="line-th" min="1" max="8" step="0.5" value="2" /></div>
+            <span class="val" data-v="line-th">2px</span>
+          </div>
+          <div class="row"><span>Bölge dolgu opaklığı</span>
+            <div class="range-wrap"><input type="range" data-k="band-op" min="20" max="100" step="2" value="92" /></div>
+            <span class="val" data-v="band-op">92%</span>
+          </div>
+          <div class="row"><span>Kenar bulanıklığı</span>
             <div class="range-wrap"><input type="range" data-k="blur" min="0" max="18" step="0.5" value="8" /></div>
             <span class="val" data-v="blur">8px</span>
           </div>
           <div class="row"><span>Vinyet</span>
             <div class="range-wrap"><input type="range" data-k="vig" min="0" max="100" value="88" /></div>
             <span class="val" data-v="vig">88%</span>
+          </div>
+        </div>
+        <div class="field js-cam-settings">
+          <label>Kamera görünümü</label>
+          <p class="meta" style="line-height:1.5;margin:-2px 0 10px">Tam ekran: kamera tüm sahneyi doldurur; şerit ve metin kenarı ile yazı üstte kalır. PiP: küçük önizleme.</p>
+          <div class="chip-group" style="margin-bottom:12px">
+            <button type="button" class="chip on" data-cam-layout="pip">Küçük (PiP)</button>
+            <button type="button" class="chip" data-cam-layout="fill">Tam ekran arkada</button>
+          </div>
+          <div class="cam-pip-opts">
+            <div class="row"><span>PiP genişliği</span>
+              <div class="range-wrap"><input type="range" data-k="pip-size" min="15" max="48" step="1" value="26" /></div>
+              <span class="val" data-v="pip-size">26%</span>
+            </div>
+            <div class="row"><span>PiP saydamlığı</span>
+              <div class="range-wrap"><input type="range" data-k="pip-op" min="25" max="100" step="2" value="100" /></div>
+              <span class="val" data-v="pip-op">100%</span>
+            </div>
+            <span class="meta" style="display:block;margin-top:10px;margin-bottom:6px">Konum</span>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:4px">
+              <button type="button" class="chip small-chip" title="Sol üst" data-pip-pos="tl">↖</button>
+              <button type="button" class="chip small-chip" title="Üst orta" data-pip-pos="tc">↑</button>
+              <button type="button" class="chip small-chip" title="Sağ üst" data-pip-pos="tr">↗</button>
+              <button type="button" class="chip small-chip" title="Sol orta" data-pip-pos="ml">←</button>
+              <button type="button" class="chip small-chip" title="Merkez" data-pip-pos="cc">◎</button>
+              <button type="button" class="chip small-chip" title="Sağ orta" data-pip-pos="mr">→</button>
+              <button type="button" class="chip small-chip" title="Sol alt" data-pip-pos="bl">↙</button>
+              <button type="button" class="chip small-chip" title="Alt orta" data-pip-pos="bc">↓</button>
+              <button type="button" class="chip small-chip" title="Sağ alt" data-pip-pos="br">↘</button>
+            </div>
+          </div>
+          <div class="cam-fill-opts" hidden>
+            <div class="row"><span>Görüntü saydamlığı</span>
+              <div class="range-wrap"><input type="range" data-k="fill-vid-op" min="15" max="100" step="2" value="45" /></div>
+              <span class="val" data-v="fill-vid-op">45%</span>
+            </div>
+            <div class="row"><span>Koyu şerit (okuma)</span>
+              <div class="range-wrap"><input type="range" data-k="fill-scrim" min="0" max="92" step="2" value="38" /></div>
+              <span class="val" data-v="fill-scrim">38%</span>
+            </div>
+            <div class="row"><span>Metin gölgesi</span>
+              <div class="range-wrap"><input type="range" data-k="fill-glow" min="0" max="100" step="5" value="42" /></div>
+              <span class="val" data-v="fill-glow">42%</span>
+            </div>
           </div>
         </div>
         <div class="field">
@@ -759,6 +1001,7 @@
       buildSettings(html);
       wireSettingsPanels(els.settingsRoot);
       wireSettingsPanels(els.settingsMobile);
+      wireCamDelegation();
     }
 
     function wireSettingsPanels(root) {
@@ -812,6 +1055,28 @@
         state.vignette = v / 100;
         els.vignette.style.opacity = String(v / 100);
       });
+
+      const bandHpx = root.querySelector('[data-k="band-hpx"]');
+      const lineTh = root.querySelector('[data-k="line-th"]');
+      const bandOp = root.querySelector('[data-k="band-op"]');
+      if (bandHpx) {
+        bindRange(bandHpx, (v) => Math.round(v) + 'px', (v) => {
+          state.bandHeightPx = v;
+          applyFocusChrome();
+        });
+      }
+      if (lineTh) {
+        bindRange(lineTh, (v) => (Math.round(v * 2) / 2).toFixed(1).replace(/\.0$/, '') + 'px', (v) => {
+          state.lineThicknessPx = v;
+          applyFocusChrome();
+        });
+      }
+      if (bandOp) {
+        bindRange(bandOp, (v) => Math.round(v) + '%', (v) => {
+          state.bandFillOpacity = Math.max(0.06, Math.min(1, v / 100));
+          applyFocusChrome();
+        });
+      }
 
       face.addEventListener('change', () => {
         const map = { fr: '"Fraunces",Georgia,serif', dm: '"DM Sans",system-ui,sans-serif', mono: '"JetBrains Mono",monospace' };
@@ -879,6 +1144,12 @@
             else if (k === 'lh') lab.textContent = parseFloat(v).toFixed(2);
             else if (k === 'blur') lab.textContent = parseFloat(v) + 'px';
             else if (k === 'vig') lab.textContent = Math.round(parseFloat(v)) + '%';
+            else if (k === 'band-hpx') lab.textContent = Math.round(parseFloat(v)) + 'px';
+            else if (k === 'line-th') {
+              const nv = Math.round(parseFloat(v) * 2) / 2;
+              lab.textContent = (nv % 1 ? nv.toFixed(1) : nv) + 'px';
+            }
+            else if (k === 'band-op') lab.textContent = Math.round(parseFloat(v)) + '%';
           }
         }
       });
@@ -973,8 +1244,10 @@
     async function toggleCam() {
       if (state.camOn) return stopCam();
       els.pip.hidden = false;
+      els.camBackdrop.style.visibility = 'hidden';
       els.pipPh.style.display = 'flex';
       els.pipVideo.style.display = 'none';
+      els.camVideoBackdrop.style.display = 'block';
       try {
         const s = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -983,19 +1256,25 @@
         state.stream = s;
         state.camOn = true;
         els.pipVideo.srcObject = s;
-        await els.pipVideo.play().catch(() => {});
+        els.camVideoBackdrop.srcObject = s;
+        await Promise.all([
+          els.pipVideo.play().catch(() => {}),
+          els.camVideoBackdrop.play().catch(() => {}),
+        ]);
         els.pipPh.style.display = 'none';
         els.pipVideo.style.display = 'block';
         els.btnCamTop.setAttribute('aria-pressed', 'true');
         els.btnRecTop.hidden = false;
-        placePip(state.pipCorner);
+        syncCamPanelsFromState();
+        applyCamVisuals();
         toast('Kamera hazır');
       } catch (e) {
         els.pip.hidden = true;
+        els.camVideoBackdrop.srcObject = null;
         state.camOn = false;
         toast('Kamera izni gerekli');
       }
-      syncCamPanel();
+      buildCamPanel();
       scheduleSave();
     }
 
@@ -1006,74 +1285,93 @@
         state.stream = null;
       }
       els.pipVideo.srcObject = null;
+      els.camVideoBackdrop.srcObject = null;
       state.camOn = false;
       els.pip.hidden = true;
       els.btnCamTop.setAttribute('aria-pressed', 'false');
       els.btnRecTop.hidden = true;
-      syncCamPanel();
+      applyCamVisuals();
+      buildCamPanel();
       scheduleSave();
     }
 
     function buildCamPanel() {
-      const html = `
-        <button type="button" class="btn primary" style="width:100%;margin-bottom:8px" data-cam-toggle>Kamerayı ${state.camOn ? 'kapat' : 'aç'}</button>
-        <button type="button" class="btn danger-soft" style="width:100%;margin-bottom:12px;display:${state.camOn ? 'flex' : 'none'}" data-rec-toggle>${state.recOn ? 'Kaydı durdur' : 'Kayıt başlat'}</button>
+      const html =
+        `
         <div class="field">
-          <label>PiP konumu</label>
-          <div class="chip-group">
-            ${['tl', 'tr', 'bl', 'br'].map((c) =>
-              `<button type="button" class="chip${state.pipCorner === c ? ' on' : ''}" data-pip="${c}">${c}</button>`
-            ).join('')}
-          </div>
+          <button type="button" class="btn primary" style="width:100%;margin-bottom:8px" data-cam-toggle>Kamerayı ${state.camOn ? 'kapat' : 'aç'}</button>
+          <button type="button" class="btn danger-soft" style="width:100%;margin-bottom:16px;display:${state.camOn ? 'flex' : 'none'}" data-rec-toggle>${state.recOn ? 'Kaydı durdur' : 'Kayıt başlat'}</button>
+          <button type="button" class="btn small ghost" style="width:100%;margin-bottom:8px" data-flip>Kamerayı çevir (ön / arka)</button>
+          <button type="button" class="chip${state.audioOn ? ' on' : ''}" style="width:100%" data-audio>${state.audioOn ? 'Kayıtta ses açık' : 'Kayıtta ses kapalı'}</button>
         </div>
-        <div class="field">
-          <label>Ön / arka kamera</label>
-          <button type="button" class="btn small" style="width:100%" data-flip>Çevir</button>
-        </div>
-        <div class="field">
-          <label>Ses (kayıtta)</label>
-          <button type="button" class="chip${state.audioOn ? ' on' : ''}" data-audio>${state.audioOn ? 'Açık' : 'Kapalı'}</button>
-        </div>`;
+        `;
       els.camMobile.innerHTML = html;
+      const srcBlk = $('.js-cam-settings', els.settingsRoot);
+      if (srcBlk) els.camMobile.appendChild(srcBlk.cloneNode(true));
       els.camMobile.querySelector('[data-cam-toggle]').addEventListener('click', () => toggleCam());
-      els.camMobile.querySelector('[data-rec-toggle]').addEventListener('click', () => toggleRec());
+      const recBtn = els.camMobile.querySelector('[data-rec-toggle]');
+      if (recBtn) recBtn.addEventListener('click', () => toggleRec());
       els.camMobile.querySelector('[data-flip]').addEventListener('click', () => flipCam());
       els.camMobile.querySelector('[data-audio]').addEventListener('click', (e) => {
         state.audioOn = !state.audioOn;
-        e.currentTarget.textContent = state.audioOn ? 'Açık' : 'Kapalı';
+        e.currentTarget.textContent = state.audioOn ? 'Kayıtta ses açık' : 'Kayıtta ses kapalı';
         e.currentTarget.classList.toggle('on', state.audioOn);
         if (state.stream) state.stream.getAudioTracks().forEach((t) => (t.enabled = state.audioOn));
         scheduleSave();
       });
-      els.camMobile.querySelectorAll('[data-pip]').forEach((b) => {
-        b.addEventListener('click', () => {
-          state.pipCorner = b.dataset.pip;
-          placePip(state.pipCorner);
-          buildCamPanel();
-          scheduleSave();
-        });
-      });
-    }
-
-    function syncCamPanel() {
-      buildCamPanel();
+      syncCamPanelsFromState();
     }
 
     function placePip(corner) {
       const pad = 12;
-      els.pip.style.top = els.pip.style.bottom = els.pip.style.left = els.pip.style.right = 'auto';
-      if (corner === 'tl') {
-        els.pip.style.top = pad + 'px';
-        els.pip.style.left = pad + 'px';
-      } else if (corner === 'tr') {
-        els.pip.style.top = pad + 'px';
-        els.pip.style.right = pad + 'px';
-      } else if (corner === 'bl') {
-        els.pip.style.bottom = pad + 'px';
-        els.pip.style.left = pad + 'px';
-      } else {
-        els.pip.style.bottom = pad + 'px';
-        els.pip.style.right = pad + 'px';
+      const p = els.pip.style;
+      p.top = p.bottom = p.left = p.right = 'auto';
+      p.margin = '';
+      p.transform = '';
+      switch (corner) {
+        case 'tl':
+          p.top = pad + 'px';
+          p.left = pad + 'px';
+          break;
+        case 'tr':
+          p.top = pad + 'px';
+          p.right = pad + 'px';
+          break;
+        case 'bl':
+          p.bottom = pad + 'px';
+          p.left = pad + 'px';
+          break;
+        case 'br':
+          p.bottom = pad + 'px';
+          p.right = pad + 'px';
+          break;
+        case 'tc':
+          p.top = pad + 'px';
+          p.left = '50%';
+          p.transform = 'translateX(-50%)';
+          break;
+        case 'bc':
+          p.bottom = pad + 'px';
+          p.left = '50%';
+          p.transform = 'translateX(-50%)';
+          break;
+        case 'ml':
+          p.top = '50%';
+          p.left = pad + 'px';
+          p.marginTop = ''; // Safari
+          p.transform = 'translateY(-50%)';
+          break;
+        case 'mr':
+          p.top = '50%';
+          p.right = pad + 'px';
+          p.transform = 'translateY(-50%)';
+          break;
+        case 'cc':
+        default:
+          p.top = '50%';
+          p.left = '50%';
+          p.transform = 'translate(-50%,-50%)';
+          break;
       }
     }
 
@@ -1090,7 +1388,11 @@
         });
         state.stream = s;
         els.pipVideo.srcObject = s;
-        await els.pipVideo.play().catch(() => {});
+        els.camVideoBackdrop.srcObject = s;
+        await Promise.all([
+          els.pipVideo.play().catch(() => {}),
+          els.camVideoBackdrop.play().catch(() => {}),
+        ]);
         toast(state.facing === 'user' ? 'Ön kamera' : 'Arka kamera');
       } catch (e) {
         toast('Kamera değiştirilemedi');
@@ -1128,14 +1430,15 @@
       state.recorder.start(200);
       state.recOn = true;
       els.btnRecTop.setAttribute('aria-pressed', 'true');
-      syncCamPanel();
+      syncCamPanelsFromState();
+      buildCamPanel();
     }
 
     function stopRec() {
       if (state.recorder && state.recorder.state !== 'inactive') state.recorder.stop();
       state.recOn = false;
       els.btnRecTop.setAttribute('aria-pressed', 'false');
-      syncCamPanel();
+      buildCamPanel();
     }
 
     function downloadBlob(blob) {
@@ -1184,6 +1487,15 @@
           pip: state.pipCorner,
           facing: state.facing,
           audio: state.audioOn,
+          camLayout: state.camLayout,
+          pipSizePct: state.pipSizePct,
+          pipOpacity: state.pipOpacity,
+          fillCamOpacity: state.fillCamOpacity,
+          fillScrimOpacity: state.fillScrimOpacity,
+          fillTextGlow: state.fillTextGlow,
+          bandHeightPx: state.bandHeightPx,
+          lineThicknessPx: state.lineThicknessPx,
+          bandFillOpacity: state.bandFillOpacity,
         };
         localStorage.setItem(LS_KEY, JSON.stringify(payload));
       } catch (e) {}
@@ -1266,7 +1578,27 @@
         }
         if (p.pip) state.pipCorner = p.pip;
         if (p.facing) state.facing = p.facing;
+        if (p.audio === false) state.audioOn = false;
+        if (p.camLayout === 'fill' || p.camLayout === 'pip') state.camLayout = p.camLayout;
+        if (p.pipSizePct != null) state.pipSizePct = Math.max(15, Math.min(48, +p.pipSizePct));
+        if (p.pipOpacity != null) state.pipOpacity = Math.max(0.15, Math.min(1, +p.pipOpacity));
+        if (p.fillCamOpacity != null) state.fillCamOpacity = Math.max(0.05, Math.min(1, +p.fillCamOpacity));
+        if (p.fillScrimOpacity != null) state.fillScrimOpacity = Math.max(0, Math.min(0.96, +p.fillScrimOpacity));
+        if (p.fillTextGlow != null) state.fillTextGlow = Math.max(0, Math.min(1, +p.fillTextGlow));
+        if (p.bandHeightPx != null) state.bandHeightPx = Math.max(56, Math.min(280, +p.bandHeightPx));
+        if (p.lineThicknessPx != null) state.lineThicknessPx = Math.max(1, Math.min(12, +p.lineThicknessPx));
+        if (p.bandFillOpacity != null) state.bandFillOpacity = Math.max(0.05, Math.min(1, +p.bandFillOpacity));
+        const _setR = (k, val) => {
+          const r = els.settingsRoot.querySelector('[data-k="' + k + '"]');
+          if (r && val != null) r.value = String(val);
+        };
+        _setR('band-hpx', Math.round(state.bandHeightPx));
+        _setR('line-th', state.lineThicknessPx);
+        _setR('band-op', Math.round(state.bandFillOpacity * 100));
         syncPlaybackToggles();
+        applyFocusChrome();
+        syncCamPanelsFromState();
+        applyCamVisuals();
       } catch (e) {}
     }
 
@@ -1295,6 +1627,9 @@
       els.progBar.addEventListener('pointerup', (e) => {
         progPointer = false;
         try { els.progBar.releasePointerCapture(e.pointerId); } catch (x) {}
+      });
+      els.progBar.addEventListener('pointercancel', () => {
+        progPointer = false;
       });
 
       document.addEventListener('keydown', (e) => {
@@ -1405,7 +1740,7 @@
         const face = els.settingsRoot.querySelector('[data-k="face"]');
         const fm = p.querySelector('[data-k="face"]');
         if (face && fm && fm !== face) fm.value = face.value;
-        ['font', 'lh', 'blur', 'vig'].forEach((k) => {
+        ['font', 'lh', 'blur', 'vig', 'band-hpx', 'line-th', 'band-op'].forEach((k) => {
           const a = els.settingsRoot.querySelector('[data-k="' + k + '"]');
           const b = p.querySelector('[data-k="' + k + '"]');
           if (a && b && a !== b) {
@@ -1426,6 +1761,9 @@
     syncText();
     updateWpmLabel();
     requestAnimationFrame(updateMax);
+    applyFocusChrome();
+    syncCamPanelsFromState();
+    applyCamVisuals();
     buildCamPanel();
     applyTab(window.matchMedia('(max-width:820px)').matches ? 'prompter' : 'editor');
   })();
