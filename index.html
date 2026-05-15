@@ -281,6 +281,7 @@
       .mobile-bar{display:flex}
       .transport .meta{display:none}
       .head-actions .btn .lbl{display:none}
+      .head-actions #btn-flip-cam-head .flip-lbl{display:inline}
       .tabs button{padding:7px 12px;font-size:.78rem}
     }
     @media (max-width:520px){
@@ -302,6 +303,9 @@
     <div class="head-actions">
       <button type="button" class="btn small primary" id="btn-cam-top" aria-pressed="false">
         <span class="lbl">Kamera</span>
+      </button>
+      <button type="button" class="btn small ghost" id="btn-flip-cam-head" hidden title="Ön / arka kamera geçişi" aria-label="Ön veya arka kameraya geç">
+        <span class="lbl flip-lbl">Arka</span>
       </button>
       <button type="button" class="btn small ghost icon-only" id="btn-rec-top" aria-label="Kayıt" aria-pressed="false" hidden>●</button>
       <button type="button" class="btn small" id="btn-fs" aria-pressed="false" title="Tam ekran (F)"><span class="lbl">Tam ekran</span></button>
@@ -521,6 +525,7 @@
       tabEditor: $('#tab-editor'),
       tabPrompter: $('#tab-prompter'),
       btnCamTop: $('#btn-cam-top'),
+      btnFlipHead: $('#btn-flip-cam-head'),
       btnRecTop: $('#btn-rec-top'),
       btnFs: $('#btn-fs'),
     };
@@ -777,7 +782,21 @@
         box.querySelectorAll('[data-pip-pos]').forEach((b) => {
           b.classList.toggle('on', b.dataset.pipPos === state.pipCorner);
         });
+        box.querySelectorAll('[data-facing]').forEach((b) => {
+          const on = b.dataset.facing === state.facing;
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
       });
+    }
+
+    function updateCamFlipHeadUi() {
+      if (!els.btnFlipHead) return;
+      els.btnFlipHead.hidden = !state.camOn;
+      const lbl = els.btnFlipHead.querySelector('.flip-lbl');
+      if (lbl) lbl.textContent = state.facing === 'user' ? 'Arkaya geç' : 'Öne geç';
+      els.btnFlipHead.title =
+        state.facing === 'user' ? 'Arka kameraya geç' : 'Ön (selfie) kameraya geç';
     }
 
     function setCamLayout(layout) {
@@ -844,6 +863,12 @@
         });
         placePip(state.pipCorner);
         scheduleSave();
+        return;
+      }
+      const faceBtn = ev.target.closest('[data-facing]');
+      if (faceBtn && faceBtn.closest('.js-cam-settings')) {
+        ev.preventDefault();
+        void switchCameraFacing(faceBtn.dataset.facing);
       }
     }
 
@@ -929,6 +954,11 @@
         <div class="field js-cam-settings">
           <label>Kamera görünümü</label>
           <p class="meta" style="line-height:1.5;margin:-2px 0 10px">Tam ekran: kamera tüm sahneyi doldurur; şerit ve metin kenarı ile yazı üstte kalır. PiP: küçük önizleme.</p>
+          <span class="meta" style="display:block;margin-bottom:6px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--text)">Kamera yönü</span>
+          <div class="chip-group" style="margin-bottom:12px;width:100%">
+            <button type="button" class="chip on" data-facing="user" aria-pressed="true" title="Selfie kamerası">Ön</button>
+            <button type="button" class="chip" data-facing="environment" aria-pressed="false" title="Ana arka kamera">Arka</button>
+          </div>
           <div class="chip-group" style="margin-bottom:12px">
             <button type="button" class="chip on" data-cam-layout="pip">Küçük (PiP)</button>
             <button type="button" class="chip" data-cam-layout="fill">Tam ekran arkada</button>
@@ -996,7 +1026,7 @@
         </div>
         <div class="field">
           <label>Kısayollar</label>
-          <div class="meta" style="line-height:1.6">Boşluk: oynat · Ok ↑↓: hız · R: sıfırla · F: tam ekran · C: kamera</div>
+          <div class="meta" style="line-height:1.6">Boşluk: oynat · Ok ↑↓: hız · R: sıfırla · F: tam ekran · C: kamera aç/kapa · V: ön ↔ arka kamera</div>
         </div>`;
       buildSettings(html);
       wireSettingsPanels(els.settingsRoot);
@@ -1267,11 +1297,13 @@
         els.btnRecTop.hidden = false;
         syncCamPanelsFromState();
         applyCamVisuals();
+        updateCamFlipHeadUi();
         toast('Kamera hazır');
       } catch (e) {
         els.pip.hidden = true;
         els.camVideoBackdrop.srcObject = null;
         state.camOn = false;
+        updateCamFlipHeadUi();
         toast('Kamera izni gerekli');
       }
       buildCamPanel();
@@ -1290,6 +1322,7 @@
       els.pip.hidden = true;
       els.btnCamTop.setAttribute('aria-pressed', 'false');
       els.btnRecTop.hidden = true;
+      updateCamFlipHeadUi();
       applyCamVisuals();
       buildCamPanel();
       scheduleSave();
@@ -1301,8 +1334,8 @@
         <div class="field">
           <button type="button" class="btn primary" style="width:100%;margin-bottom:8px" data-cam-toggle>Kamerayı ${state.camOn ? 'kapat' : 'aç'}</button>
           <button type="button" class="btn danger-soft" style="width:100%;margin-bottom:16px;display:${state.camOn ? 'flex' : 'none'}" data-rec-toggle>${state.recOn ? 'Kaydı durdur' : 'Kayıt başlat'}</button>
-          <button type="button" class="btn small ghost" style="width:100%;margin-bottom:8px" data-flip>Kamerayı çevir (ön / arka)</button>
-          <button type="button" class="chip${state.audioOn ? ' on' : ''}" style="width:100%" data-audio>${state.audioOn ? 'Kayıtta ses açık' : 'Kayıtta ses kapalı'}</button>
+          <button type="button" class="chip${state.audioOn ? ' on' : ''}" style="width:100%;margin-bottom:4px" data-audio>${state.audioOn ? 'Kayıtta ses açık' : 'Kayıtta ses kapalı'}</button>
+          <p class="meta" style="line-height:1.45;margin:8px 0 0;font-size:.7rem">Ön/arka seçimi aşağıdaki &quot;Kamera görünümü&quot; bloğundadır.</p>
         </div>
         `;
       els.camMobile.innerHTML = html;
@@ -1311,7 +1344,6 @@
       els.camMobile.querySelector('[data-cam-toggle]').addEventListener('click', () => toggleCam());
       const recBtn = els.camMobile.querySelector('[data-rec-toggle]');
       if (recBtn) recBtn.addEventListener('click', () => toggleRec());
-      els.camMobile.querySelector('[data-flip]').addEventListener('click', () => flipCam());
       els.camMobile.querySelector('[data-audio]').addEventListener('click', (e) => {
         state.audioOn = !state.audioOn;
         e.currentTarget.textContent = state.audioOn ? 'Kayıtta ses açık' : 'Kayıtta ses kapalı';
@@ -1375,17 +1407,25 @@
       }
     }
 
-    async function flipCam() {
-      if (!state.camOn) return;
-      state.facing = state.facing === 'user' ? 'environment' : 'user';
+    async function switchCameraFacing(nextFacing) {
+      if (nextFacing !== 'user' && nextFacing !== 'environment') return;
+      if (state.facing === nextFacing) return;
+      const prevFacing = state.facing;
+      state.facing = nextFacing;
+      syncCamPanelsFromState();
+      scheduleSave();
+      if (!state.camOn) {
+        updateCamFlipHeadUi();
+        return;
+      }
       const wasRec = state.recOn;
       if (wasRec) stopRec();
-      state.stream.getTracks().forEach((t) => t.stop());
       try {
         const s = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: state.audioOn,
         });
+        if (state.stream) state.stream.getTracks().forEach((t) => t.stop());
         state.stream = s;
         els.pipVideo.srcObject = s;
         els.camVideoBackdrop.srcObject = s;
@@ -1395,9 +1435,16 @@
         ]);
         toast(state.facing === 'user' ? 'Ön kamera' : 'Arka kamera');
       } catch (e) {
-        toast('Kamera değiştirilemedi');
+        state.facing = prevFacing;
+        syncCamPanelsFromState();
+        scheduleSave();
+        toast('Bu kamera seçilemedi veya izin yok');
       }
-      scheduleSave();
+      updateCamFlipHeadUi();
+    }
+
+    async function flipCam() {
+      return switchCameraFacing(state.facing === 'user' ? 'environment' : 'user');
     }
 
     function toggleRec() {
@@ -1599,6 +1646,7 @@
         applyFocusChrome();
         syncCamPanelsFromState();
         applyCamVisuals();
+        updateCamFlipHeadUi();
       } catch (e) {}
     }
 
@@ -1607,6 +1655,8 @@
       els.btnReset.addEventListener('click', resetPlay);
       els.btnCamTop.addEventListener('click', toggleCam);
       els.btnRecTop.addEventListener('click', toggleRec);
+      if (els.btnFlipHead)
+        els.btnFlipHead.addEventListener('click', () => void flipCam());
       els.btnFs.addEventListener('click', goFullscreen);
 
       els.speed.addEventListener('input', () => {
@@ -1649,6 +1699,9 @@
           els.speed.value = String(state.speed);
           updateWpmLabel();
           scheduleSave();
+        } else if (e.code === 'KeyV' && state.camOn) {
+          e.preventDefault();
+          void flipCam();
         } else if (e.code === 'KeyR') resetPlay();
         else if (e.code === 'KeyF') goFullscreen();
         else if (e.code === 'KeyC') toggleCam();
@@ -1764,6 +1817,7 @@
     applyFocusChrome();
     syncCamPanelsFromState();
     applyCamVisuals();
+    updateCamFlipHeadUi();
     buildCamPanel();
     applyTab(window.matchMedia('(max-width:820px)').matches ? 'prompter' : 'editor');
   })();
