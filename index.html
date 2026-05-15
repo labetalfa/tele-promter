@@ -1,1517 +1,1434 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>PrompterStudio Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-/* ─── RESET & BASE ─── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{font-family:'Syne',sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#07070a" />
+  <title>FlowPrompter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:"DM Sans",system-ui,sans-serif;
+      background:var(--shell);color:var(--text);
+      display:flex;flex-direction:column;min-height:100dvh;
+      overscroll-behavior:none;-webkit-tap-highlight-color:transparent;
+    }
+    :root{
+      --shell:#07070a;--panel:#0e0e14;--elev:#14141c;--line:rgba(255,255,255,.08);
+      --muted:#8b8698;--text:#f4f1ea;--accent:#e8b84a;--accent-dim:rgba(232,184,74,.15);
+      --ok:#3dd68c;--danger:#ff5c5c;--focus-ring:0 0 0 2px var(--panel),0 0 0 4px var(--accent);
+      --pad:max(12px, env(safe-area-inset-left));
+      --pad-r:max(12px, env(safe-area-inset-right));
+      --pad-b:max(10px, env(safe-area-inset-bottom));
+      --pad-t:max(8px, env(safe-area-inset-top));
+      --r:12px;--r2:16px;--shadow:0 18px 50px rgba(0,0,0,.45);
+      --stage-bg:#050508;--stage-fg:#f6f2e8;
+      --band:rgba(232,184,74,.14);--band-line:rgba(232,184,74,.65);
+      --band-h:clamp(76px, 14vh, 160px);--blur:8px;--vignette:.88;
+      --fz:clamp(22px, 2.35vw + 14px, 52px);--lh:1.52;
+      --tr:.18s cubic-bezier(.2,.8,.2,1);
+    }
+    body.theme-amber{--stage-bg:#0a0702;--stage-fg:#ffd48a;--band:rgba(255,212,138,.14);--band-line:rgba(255,212,138,.72)}
+    body.theme-studio{--stage-bg:#000;--stage-fg:#fff;--band:rgba(255,255,255,.1);--band-line:rgba(255,255,255,.55)}
+    body.theme-light{--stage-bg:#f3efe6;--stage-fg:#16161a;--band:rgba(0,0,0,.06);--band-line:rgba(0,0,0,.28)}
+    body.theme-green{--stage-bg:#041008;--stage-fg:#9dffc3;--band:rgba(157,255,195,.14);--band-line:rgba(157,255,195,.62)}
+    body.theme-blue{--stage-bg:#040c18;--stage-fg:#9fd4ff;--band:rgba(159,212,255,.14);--band-line:rgba(159,212,255,.62)}
+    button,input,textarea,select{font:inherit;color:inherit}
 
-/* ─── DESIGN TOKENS ─── */
-:root{
-  --bg0:#09090c; --bg1:#111116; --bg2:#17171e; --bg3:#1e1e28;
-  --b0:rgba(255,255,255,.06); --b1:rgba(255,255,255,.11); --b2:rgba(255,255,255,.18);
-  --t1:#edeae4; --t2:#8a8796; --t3:#4a4858;
-  --ac:#c9993a; --ac-d:rgba(201,153,58,.13); --ac-g:rgba(201,153,58,.22); --ac-b:rgba(201,153,58,.32);
-  --gr:#3fa86a; --rd:#c94a4a;
-  --p-bg:#09090c; --p-txt:#f0ece4;
-  --f-bg:rgba(201,153,58,.12); --f-ln:rgba(201,153,58,.45);
-  --f-h:16%; --blur:5px; --fade:.85;
-  --r1:6px; --r2:10px; --r3:16px;
-  --tr:.16s cubic-bezier(.4,0,.2,1);
-}
-.th-amber{--p-bg:#0c0800;--p-txt:#ffd680;--f-bg:rgba(255,214,128,.11);--f-ln:rgba(255,214,128,.5)}
-.th-hc{--p-bg:#000;--p-txt:#fff;--f-bg:rgba(255,255,255,.1);--f-ln:rgba(255,255,255,.6)}
-.th-light{--p-bg:#f5f2ec;--p-txt:#18181a;--f-bg:rgba(0,0,0,.07);--f-ln:rgba(0,0,0,.25)}
-.th-green{--p-bg:#040d06;--p-txt:#72ff9a;--f-bg:rgba(114,255,154,.1);--f-ln:rgba(114,255,154,.45)}
-.th-blue{--p-bg:#030b18;--p-txt:#82c8ff;--f-bg:rgba(130,200,255,.1);--f-ln:rgba(130,200,255,.45)}
+    /* App shell */
+    .app-head{
+      flex-shrink:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+      padding:10px var(--pad-r) 10px var(--pad);border-bottom:1px solid var(--line);
+      background:rgba(14,14,20,.94);backdrop-filter:blur(10px);z-index:40;
+      min-height:52px;padding-top:max(10px,var(--pad-t));
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em;font-size:.95rem}
+    .brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,var(--accent),#b9821a)}
+    .tabs{display:flex;background:var(--elev);padding:4px;border-radius:999px;border:1px solid var(--line);gap:2px}
+    .tabs button{
+      border:0;border-radius:999px;background:transparent;color:var(--muted);
+      padding:7px 14px;font-weight:600;font-size:.82rem;cursor:pointer;transition:color var(--tr),background var(--tr),transform .1s;
+    }
+    .tabs button[aria-selected="true"]{background:var(--panel);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.05)}
+    .head-actions{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:9px 12px;border-radius:10px;border:1px solid var(--line);
+      background:var(--elev);color:var(--text);cursor:pointer;font-weight:600;font-size:.82rem;transition:var(--tr);min-height:40px;
+    }
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .btn:hover:not(:disabled){border-color:rgba(255,255,255,.18);background:#1a1a24}
+    .btn.small{padding:8px 10px;font-size:.78rem;border-radius:8px}
+    .btn.primary{background:var(--accent-dim);border-color:rgba(232,184,74,.42);color:var(--accent)}
+    .btn.danger-soft{background:rgba(255,92,92,.12);border-color:rgba(255,92,92,.35);color:#ffb4b4}
+    .btn.ghost{background:transparent}
+    .btn.icon-only{padding:10px;width:42px;height:42px}
 
-/* ═══ TOPBAR ═══ */
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 16px;height:50px;background:var(--bg1);border-bottom:1px solid var(--b0);
-  flex-shrink:0;z-index:100;gap:8px;
-}
-.logo{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.05em;flex-shrink:0;color:var(--t1)}
-.logo-mark{width:28px;height:28px;background:var(--ac);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.logo-mark svg{width:15px;height:15px;fill:#09090c}
-.logo em{color:var(--ac);font-style:normal}
-.logo-text{display:inline}
+    /* Body layout */
+    .app-body{display:flex;flex:1;min-height:0;overflow:hidden}
+    .panel{
+      width:300px;background:var(--panel);flex-shrink:0;display:flex;
+      flex-direction:column;border-right:1px solid var(--line);min-width:0;
+    }
+    .panel:last-of-type{border-right:0;border-left:1px solid var(--line)}
+    .panel[hidden]{display:none!important}
+    .panel-head{
+      padding:12px 14px;border-bottom:1px solid var(--line);
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;
+    }
+    .panel-head h2{margin:0;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+    .meta{font-family:"JetBrains Mono",monospace;font-size:.72rem;color:var(--muted)}
+    .editor{flex:1;display:flex;flex-direction:column;min-height:0}
+    .editor textarea{
+      flex:1;border:0;resize:none;padding:14px;background:transparent;color:var(--text);
+      line-height:1.55;font-size:.95rem;outline:none;min-height:200px;
+    }
+    .settings-body{flex:1;overflow:auto;padding:10px 12px 18px;scroll-behavior:smooth}
+    .settings-body::-webkit-scrollbar{width:6px}
+    .settings-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:6px}
+    .field{margin-bottom:14px}
+    .field > label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .row{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+    .range-wrap{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+    input[type="range"]{
+      -webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:4px;
+      background:var(--elev);outline:none;cursor:pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+      background:var(--accent);box-shadow:0 0 0 2px rgba(0,0,0,.35);border:none;
+    }
+    input[type="range"]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);border:0}
+    .val{font-family:"JetBrains Mono",monospace;font-size:.78rem;color:var(--accent);min-width:48px;text-align:right}
+    .chip-group{display:flex;flex-wrap:wrap;gap:6px}
+    .chip{
+      border:1px solid var(--line);background:var(--elev);border-radius:999px;
+      padding:7px 12px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;transition:var(--tr);
+    }
+    .chip[aria-pressed="true"],.chip.on{background:var(--accent-dim);border-color:rgba(232,184,74,.45);color:var(--accent)}
+    select{
+      width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+      background:var(--elev);color:var(--text);outline:none;
+    }
+    select:focus{box-shadow:var(--focus-ring)}
+    .theme-dots{display:flex;flex-wrap:wrap;gap:8px}
+    .theme-dot{
+      width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);
+    }
+    .theme-dot[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+    .td-def{background:#08080c}.td-amber{background:#ffd48a}.td-studio{background:#fff}
+    .td-light{background:#f3efe6}.td-green{background:#9dffc3}.td-blue{background:#9fd4ff}
 
-.tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--b0);border-radius:var(--r2);padding:3px}
-.tab{padding:5px 13px;border-radius:7px;border:none;background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:var(--tr);letter-spacing:.03em;-webkit-tap-highlight-color:transparent}
-.tab:hover{color:var(--t1)}
-.tab.on{background:var(--bg3);color:var(--ac);font-weight:600}
+    /* Center column */
+    .center{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--shell)}
+    .stage-wrap{flex:1;position:relative;min-height:0;background:var(--stage-bg);overflow:hidden;touch-action:none}
+    .stage-wrap.playing{cursor:none}
+    .viewport{position:absolute;inset:0;overflow:hidden}
+    .mirror-shell{width:100%;min-height:100%;transform-origin:center center;will-change:transform}
+    .stage-wrap.mirror-h .mirror-shell{transform:scaleX(-1)}
+    .stage-wrap.mirror-v .mirror-shell{transform:scaleY(-1)}
+    .stage-wrap.mirror-hv .mirror-shell{transform:scale(-1,-1)}
+    .track{
+      will-change:transform;transform:translate3d(0,0,0);padding:min(42vh,360px) 8% min(42vh,360px);
+    }
+    .script{
+      font-family:"Fraunces",Georgia,serif;font-size:var(--fz);line-height:var(--lh);
+      color:var(--stage-fg);white-space:pre-wrap;word-break:break-word;text-align:left;
+      font-variation-settings:"opsz" 72;
+    }
+    .script strong{font-weight:700}
+    .reading-layer{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;z-index:5}
+    .rl-top,.rl-bot{flex:1;transition:flex-grow .25s ease}
+    .rl-band{
+      height:var(--band-h);flex-shrink:0;position:relative;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);
+    }
+    .rl-band::before{
+      content:"";position:absolute;left:6%;right:6%;top:0;bottom:0;border-radius:14px;
+      background:var(--band);border:1px solid var(--band-line);
+    }
+    .rl-line{position:absolute;left:4%;right:4%;height:2px;background:var(--band-line);top:50%;transform:translateY(-50%);border-radius:2px}
+    .vignette{
+      pointer-events:none;position:absolute;inset:0;z-index:4;
+      background:linear-gradient(to bottom,var(--stage-bg),transparent 18%,transparent 82%,var(--stage-bg));
+      opacity:var(--vignette);transition:opacity .25s ease;
+    }
+    .blur-fade{
+      position:absolute;left:0;right:0;pointer-events:none;z-index:3;
+      height:clamp(72px,12vh,200px);-webkit-backdrop-filter:blur(var(--blur));backdrop-filter:blur(var(--blur));
+    }
+    .blur-fade.top{top:0;background:linear-gradient(to bottom,var(--stage-bg),transparent);opacity:.9}
+    .blur-fade.bot{bottom:0;background:linear-gradient(to top,var(--stage-bg),transparent);opacity:.9}
 
-.top-acts{display:flex;align-items:center;gap:5px;flex-shrink:0}
-.act-btn{
-  display:flex;align-items:center;gap:5px;
-  padding:6px 11px;border-radius:var(--r1);border:1px solid var(--b1);
-  background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:12px;
-  cursor:pointer;transition:var(--tr);white-space:nowrap;-webkit-tap-highlight-color:transparent;
-}
-.act-btn svg{width:14px;height:14px;fill:currentColor;flex-shrink:0}
-.act-btn:hover,.act-btn:active{background:var(--bg3);color:var(--t1);border-color:var(--b2)}
-.act-btn.hi{background:var(--ac-d);color:var(--ac);border-color:var(--ac-b)}
-.act-btn.rec{background:rgba(201,74,74,.18);color:#e87070;border-color:rgba(201,74,74,.4)}
-.act-label{} /* toggled by media query */
+    body.reduce-motion *,body.reduce-motion *::before{animation:none!important;transition:none!important}
 
-/* ═══ MAIN ═══ */
-.main{display:flex;flex:1;min-height:0;overflow:hidden}
+    .pip{
+      position:absolute;z-index:30;width:min(240px,32vw);aspect-ratio:16/9;background:#000;border-radius:14px;
+      overflow:hidden;border:1px solid rgba(232,184,74,.42);box-shadow:var(--shadow);touch-action:none;
+    }
+    .pip video{width:100%;height:100%;object-fit:cover;display:block}
+    .pip .ph{
+      display:flex;align-items:center;justify-content:center;height:100%;font-size:.75rem;color:var(--muted);padding:8px;text-align:center;
+    }
 
-/* ═══ EDITOR ═══ */
-.editor{
-  width:320px;flex-shrink:0;background:var(--bg1);
-  border-right:1px solid var(--b0);display:flex;flex-direction:column;
-  transition:width .22s ease;overflow:hidden;
-}
-.editor.closed{width:0}
-.ed-head{padding:10px 14px;border-bottom:1px solid var(--b0);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)}
-.wstat{font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace}
-.ta{flex:1;background:transparent;border:none;outline:none;resize:none;color:var(--t1);font-family:'Instrument Serif',serif;font-size:14px;line-height:1.75;padding:14px;caret-color:var(--ac);min-height:0}
-.ta::placeholder{color:var(--t3);font-style:italic}
+    /* Transport */
+    .transport{
+      flex-shrink:0;border-top:1px solid var(--line);background:rgba(14,14,20,.96);
+      backdrop-filter:blur(14px);padding:10px var(--pad-r) calc(10px + var(--pad-b)) var(--pad);
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    }
+    .play-toggle{
+      width:52px;height:52px;border-radius:999px;border:1px solid rgba(232,184,74,.5);
+      background:linear-gradient(145deg,rgba(232,184,74,.92),#c49222);cursor:pointer;display:grid;
+      place-items:center;box-shadow:0 14px 30px rgba(232,184,74,.28);transition:transform .12s ease;
+    }
+    .play-toggle:active{transform:scale(.96)}
+    .play-toggle svg{width:22px;height:22px;fill:#1a1406}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
+    .status-dot.running{background:var(--ok);box-shadow:0 0 12px rgba(61,214,140,.7)}
+    .status-dot.paused-at{background:var(--accent);box-shadow:0 0 12px rgba(232,184,74,.45)}
+    .timer{font-family:"JetBrains Mono",monospace;font-size:.82rem;color:var(--muted);min-width:56px}
+    .prog{flex:1;min-width:140px;display:flex;align-items:center;gap:10px}
+    .prog-bar{flex:1;height:6px;border-radius:99px;background:var(--elev);position:relative;cursor:pointer;touch-action:none}
+    .prog-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#ffe6a3)}
 
-/* ═══ STAGE WRAP ═══ */
-.stage-wrap{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+    /* Mobile bar */
+    .mobile-bar{
+      display:none;border-top:1px solid var(--line);background:var(--panel);
+      padding:6px var(--pad-r) calc(6px + var(--pad-b)) var(--pad);gap:6px;justify-content:space-around;
+    }
+    .mobile-bar button{
+      flex:1;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;
+      align-items:center;gap:4px;padding:8px 4px;border-radius:12px;font-weight:700;font-size:.68rem;letter-spacing:.04em;
+    }
+    .mobile-bar button[data-active="true"]{color:var(--accent);background:var(--elev)}
 
-/* ═══ PROMPTER STAGE ═══ */
-.stage{flex:1;position:relative;overflow:hidden;background:var(--p-bg);transition:background .3s}
-.vp{position:absolute;inset:0;overflow:hidden}
-.ct{padding:55vh 12% 55vh;will-change:transform}
-.pt{font-family:'Instrument Serif',serif;font-size:40px;line-height:1.55;color:var(--p-txt);white-space:pre-wrap;word-break:break-word;text-align:left;transition:color .3s}
-.pt p{margin-bottom:0}
+    /* Sheets */
+    .sheet-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;
+      transition:opacity .25s ease;z-index:90;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    }
+    .sheet-backdrop.open{opacity:1;pointer-events:auto}
+    .sheet{
+      position:fixed;left:0;right:0;bottom:0;max-height:86dvh;background:var(--panel);
+      border-radius:18px 18px 0 0;border:1px solid var(--line);border-bottom:0;
+      transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);z-index:100;
+      display:flex;flex-direction:column;box-shadow:0 -30px 80px rgba(0,0,0,.55);
+    }
+    .sheet.open{transform:translateY(0)}
+    .sheet-handle{width:40px;height:5px;border-radius:99px;background:rgba(255,255,255,.16);margin:10px auto 4px}
+    .sheet-title{text-align:center;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:4px 16px 10px}
+    .sheet-body{flex:1;overflow:auto;padding:0 14px 18px}
+    .sheet-actions{padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:flex-end}
 
-/* Mirror */
-.stage.mh .ct{transform-origin:center;transform:scaleX(-1)}
-.stage.mv .ct{transform-origin:center;transform:scaleY(-1)}
-.stage.mh.mv .ct{transform:scale(-1,-1)}
+    .countdown{
+      position:absolute;inset:0;background:rgba(5,5,8,.78);display:grid;place-items:center;z-index:60;
+      opacity:0;pointer-events:none;transition:opacity .25s ease;
+    }
+    .countdown.on{opacity:1;pointer-events:auto}
+    .countdown span{font-size:clamp(72px,18vw,140px);font-weight:800;color:var(--accent);text-shadow:0 0 60px rgba(232,184,74,.45)}
 
-/* Focus + Blur overlay */
-.fov{position:absolute;inset:0;pointer-events:none;z-index:15;display:flex;flex-direction:column}
-.blur-t,.blur-b{flex:1;transition:backdrop-filter .3s,opacity .3s}
-.blur-t{
-  background:linear-gradient(to bottom,var(--p-bg) 0%,transparent 100%);
-  opacity:var(--fade);
-  -webkit-backdrop-filter:blur(var(--blur));
-  backdrop-filter:blur(var(--blur));
-}
-.blur-b{
-  background:linear-gradient(to top,var(--p-bg) 0%,transparent 100%);
-  opacity:var(--fade);
-  -webkit-backdrop-filter:blur(var(--blur));
-  backdrop-filter:blur(var(--blur));
-}
-.fb{height:var(--f-h);flex-shrink:0;position:relative}
-.fb-fill{position:absolute;inset:0;background:var(--f-bg);transition:background .3s}
-.fl-t,.fl-b{position:absolute;left:0;right:0;height:1.5px;background:var(--f-ln);transition:background .3s}
-.fl-t{top:0}.fl-b{bottom:0}
+    .toast{
+      position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(10px);
+      background:var(--elev);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:999px;
+      font-size:.85rem;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:200;max-width:min(92vw,420px);text-align:center;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* Countdown */
-.cdo{position:absolute;inset:0;background:rgba(9,9,12,.87);display:flex;align-items:center;justify-content:center;z-index:60;opacity:0;pointer-events:none;transition:opacity .25s}
-.cdo.on{opacity:1;pointer-events:all}
-.cdn{font-family:'Syne',sans-serif;font-size:120px;font-weight:800;color:var(--ac);line-height:1;text-shadow:0 0 80px var(--ac-g);transition:transform .7s cubic-bezier(.2,0,0,1),opacity .7s}
+    /* Fullscreen */
+    :fullscreen .app-head,:fullscreen .panel,:fullscreen .transport,:fullscreen .mobile-bar{display:none!important}
+    :-webkit-full-screen .app-head,:-webkit-full-screen .panel,:-webkit-full-screen .transport,:-webkit-full-screen .mobile-bar{display:none!important}
 
-/* Camera PiP */
-.pip{
-  position:absolute;z-index:50;border-radius:var(--r3);overflow:hidden;
-  border:1.5px solid var(--ac-b);box-shadow:0 8px 32px rgba(0,0,0,.6);
-  background:#000;cursor:move;user-select:none;transition:border-color .2s;
-  width:220px;height:124px;top:14px;right:14px;
-}
-.pip:hover{border-color:var(--ac)}
-.pip video{display:block;width:100%;height:100%;object-fit:cover}
-.pip-ov{
-  position:absolute;bottom:0;left:0;right:0;
-  background:linear-gradient(to top,rgba(0,0,0,.7),transparent);
-  padding:6px 8px;display:flex;align-items:center;justify-content:space-between;
-  opacity:0;transition:opacity .2s;
-}
-.pip:hover .pip-ov{opacity:1}
-.rdot{width:7px;height:7px;border-radius:50%;background:var(--rd);flex-shrink:0}
-.rdot.on{box-shadow:0 0 8px var(--rd);animation:blink 1.2s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.rtm{font-family:'JetBrains Mono',monospace;font-size:11px;color:#fff}
-.psz{display:flex;gap:3px}
-.psz button{width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.5);color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.pip-no{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--t3);font-size:11px;padding:12px;text-align:center}
-.pip-no svg{width:24px;height:24px;fill:currentColor;opacity:.4}
-
-/* ═══ PLAYBAR ═══ */
-.playbar{height:60px;background:var(--bg1);border-top:1px solid var(--b0);display:flex;align-items:center;padding:0 16px;gap:9px;flex-shrink:0}
-.play-btn{width:42px;height:42px;border-radius:50%;border:none;background:var(--ac);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 0 18px var(--ac-g);transition:var(--tr);-webkit-tap-highlight-color:transparent}
-.play-btn:hover{transform:scale(1.08);box-shadow:0 0 28px var(--ac-g)}
-.play-btn:active{transform:scale(.95)}
-.play-btn svg{width:17px;height:17px;fill:#09090c}
-.stop-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--b1);background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:var(--tr);-webkit-tap-highlight-color:transparent}
-.stop-btn:hover{background:var(--bg3);color:var(--t1)}
-.stop-btn svg{width:12px;height:12px;fill:currentColor}
-.sdot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:all .3s}
-.sdot.run{background:var(--gr);box-shadow:0 0 8px var(--gr)}
-.sdot.psd{background:var(--ac)}
-.spd{display:flex;align-items:center;gap:7px;width:200px;flex-shrink:0}
-.spd-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
-.prg{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
-.prg-bar{flex:1;height:3px;background:var(--bg3);border-radius:2px;cursor:pointer;position:relative}
-.prg-fill{height:100%;background:var(--ac);border-radius:2px;width:0%}
-.prg-t{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);white-space:nowrap}
-.wpm-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);white-space:nowrap;letter-spacing:.02em;flex-shrink:0}
-.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg3);border:1px solid var(--b2);border-radius:20px;padding:8px 18px;font-size:12px;color:var(--t1);z-index:9999;opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;white-space:nowrap;font-family:'Syne',sans-serif}
-.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* active-line highlight — odak bandındaki metin parlak, dışı soluk */
-.pt-wrap{position:relative}
-.stage.hl-on .pt{
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent calc(50% - var(--f-h) / 2 - 4%),
-    black calc(50% - var(--f-h) / 2 + 2%),
-    black calc(50% + var(--f-h) / 2 - 2%),
-    transparent calc(50% + var(--f-h) / 2 + 4%),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent calc(50% - var(--f-h) / 2 - 4%),
-    black calc(50% - var(--f-h) / 2 + 2%),
-    black calc(50% + var(--f-h) / 2 - 2%),
-    transparent calc(50% + var(--f-h) / 2 + 4%),
-    transparent 100%
-  );
-}
-.kbds{display:flex;gap:3px;align-items:center;flex-shrink:0}
-.kbd{padding:2px 5px;background:var(--bg3);border:1px solid var(--b1);border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t2)}
-
-/* ═══ SIDEBAR ═══ */
-.sidebar{width:264px;flex-shrink:0;background:var(--bg1);border-left:1px solid var(--b0);display:flex;flex-direction:column;overflow-y:auto}
-.sidebar::-webkit-scrollbar{width:3px}
-.sidebar::-webkit-scrollbar-thumb{background:var(--b1);border-radius:3px}
-.cs{padding:12px 14px;border-bottom:1px solid var(--b0)}
-.cs-t{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
-.cr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.cr:last-child{margin-bottom:0}
-.cl{font-size:12px;color:var(--t2)}
-
-/* Sliders */
-.sw{display:flex;align-items:center;gap:6px;width:150px}
-input[type=range]{-webkit-appearance:none;flex:1;height:3px;background:var(--bg3);border-radius:2px;outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ac);cursor:pointer;transition:transform .1s;box-shadow:0 0 6px var(--ac-g)}
-input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
-input[type=range]::-webkit-slider-thumb:active{transform:scale(1.1)}
-.sv{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ac);min-width:34px;text-align:right}
-
-/* Toggles */
-.tg{display:flex;gap:3px;flex-wrap:wrap}
-.tp{padding:4px 9px;border-radius:20px;border:1px solid var(--b1);background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:11px;cursor:pointer;transition:var(--tr);-webkit-tap-highlight-color:transparent}
-.tp:hover{border-color:var(--ac);color:var(--t1)}
-.tp.on{background:var(--ac);color:#09090c;border-color:var(--ac);font-weight:600}
-
-/* Icon buttons */
-.ib{width:30px;height:30px;border-radius:var(--r1);border:1px solid var(--b1);background:transparent;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr);-webkit-tap-highlight-color:transparent}
-.ib:hover{background:var(--bg3);color:var(--t1)}
-.ib.on{background:var(--ac-d);color:var(--ac);border-color:var(--ac-b)}
-.ib svg{width:13px;height:13px;fill:currentColor}
-
-/* Color swatches */
-.swatches{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-.sw-c{width:21px;height:21px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:var(--tr);flex-shrink:0}
-.sw-c:hover{transform:scale(1.15)}
-.sw-c.on{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)}
-
-/* Theme dots */
-.tdots{display:flex;gap:6px;flex-wrap:wrap}
-.tdot{width:21px;height:21px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:var(--tr)}
-.tdot:hover{transform:scale(1.15)}
-.tdot.on{border-color:var(--ac)}
-.tdot[data-t=def]{background:#09090c;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
-.tdot[data-t=amber]{background:#ffd680}
-.tdot[data-t=hc]{background:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
-.tdot[data-t=light]{background:#f5f2ec;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
-.tdot[data-t=green]{background:#72ff9a}
-.tdot[data-t=blue]{background:#82c8ff}
-
-/* Mirror presets */
-.mp-wrap{display:flex;gap:4px;flex-wrap:wrap}
-.mp-btn{padding:4px 9px;border-radius:var(--r1);border:1px solid var(--b1);background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:11px;cursor:pointer;transition:var(--tr);-webkit-tap-highlight-color:transparent}
-.mp-btn:hover{border-color:var(--b2);color:var(--t1)}
-.mp-btn.on{background:var(--ac-d);color:var(--ac);border-color:var(--ac-b)}
-
-/* Time card */
-.tcard{background:var(--bg2);border:1px solid var(--b0);border-radius:var(--r2);padding:10px 12px}
-.trow{display:flex;gap:10px}
-.ti .tv{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;color:var(--ac)}
-.ti .tl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-top:1px}
-
-/* Font select */
-.fsel{width:100%;padding:6px 8px;background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r1);color:var(--t1);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;outline:none;transition:var(--tr)}
-.fsel:focus{border-color:var(--ac-b)}
-.fsel option{background:#17171e;color:#edeae4}
-
-/* Camera status row */
-.cam-row{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--bg2);border:1px solid var(--b0);border-radius:var(--r2);margin-bottom:8px}
-.c-ind{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:all .3s}
-.c-ind.on{background:var(--gr);box-shadow:0 0 8px var(--gr)}
-.c-ind.rec{background:var(--rd);box-shadow:0 0 8px var(--rd);animation:blink 1.2s infinite}
-.c-info{font-size:11px;color:var(--t2);flex:1}
-.c-info strong{color:var(--t1)}
-.rec-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--rd);background:rgba(201,74,74,.12);border:1px solid rgba(201,74,74,.25);padding:2px 6px;border-radius:20px}
-
-.dl-btn{display:flex;align-items:center;gap:5px;padding:7px 12px;border:1px solid var(--b1);border-radius:var(--r1);background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;transition:var(--tr);width:100%;justify-content:center;margin-top:5px}
-.dl-btn:hover{background:var(--bg3);color:var(--t1)}
-.dl-btn.ok{color:var(--gr);border-color:rgba(63,168,106,.3);background:rgba(63,168,106,.08)}
-.dl-btn svg{width:12px;height:12px;fill:currentColor}
-
-/* Row2 */
-.row2{display:flex;gap:4px}
-.row2 .ib{flex:1;width:auto;padding:0 6px}
-
-/* Color input */
-input[type=color]{width:28px;height:28px;border:1px solid var(--b1);border-radius:var(--r1);background:var(--bg2);cursor:pointer;padding:2px}
-input[type=color]::-webkit-color-swatch-wrapper{padding:0;border-radius:3px}
-input[type=color]::-webkit-color-swatch{border:none;border-radius:3px}
-
-/* ╔══════════════════════════════════════════╗
-   ║  MOBILE DRAWER & NAV SYSTEM              ║
-   ╚══════════════════════════════════════════╝ */
-.m-backdrop{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);
-  z-index:500;opacity:0;transition:opacity .25s;
-  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
-}
-.m-backdrop.on{display:block;opacity:1}
-
-.m-drawer{
-  position:fixed;bottom:0;left:0;right:0;
-  background:var(--bg1);border-top:1px solid var(--b1);
-  border-radius:18px 18px 0 0;z-index:600;
-  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
-  max-height:85dvh;display:flex;flex-direction:column;
-}
-.m-drawer.on{transform:translateY(0)}
-.drg{width:34px;height:4px;background:var(--b2);border-radius:2px;margin:10px auto 4px;flex-shrink:0}
-.drt{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);text-align:center;padding:0 0 10px;flex-shrink:0}
-.drb{flex:1;overflow-y:auto;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-.drb::-webkit-scrollbar{width:3px}
-.drb::-webkit-scrollbar-thumb{background:var(--b1);border-radius:3px}
-
-/* Editor drawer specific */
-.ed-meta{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--b0)}
-.ed-meta span{font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace}
-.done-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid var(--ac-b);background:var(--ac-d);color:var(--ac);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
-
-/* Mobile bottom nav */
-.m-nav{
-  display:none;align-items:center;justify-content:space-around;
-  height:60px;background:var(--bg1);border-top:1px solid var(--b0);
-  flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px);z-index:100;
-}
-.mnb{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:6px 12px;border:none;background:transparent;color:var(--t3);
-  cursor:pointer;border-radius:10px;font-family:'Syne',sans-serif;
-  transition:var(--tr);-webkit-tap-highlight-color:transparent;
-}
-.mnb svg{width:22px;height:22px;fill:currentColor}
-.mnb span{font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.mnb.on{color:var(--ac)}
-.mnb.gn{color:var(--gr)}
-.mnb.rd{color:var(--rd)}
-
-/* ══ FULLSCREEN ══ */
-:fullscreen .topbar,:fullscreen .editor,:fullscreen .sidebar,:fullscreen .playbar,:fullscreen .m-nav{display:none!important}
-:-webkit-full-screen .topbar,:-webkit-full-screen .editor,:-webkit-full-screen .sidebar,:-webkit-full-screen .playbar,:-webkit-full-screen .m-nav{display:none!important}
-
-/* ╔══════════════════════════════════════════╗
-   ║  RESPONSIVE BREAKPOINTS                  ║
-   ╚══════════════════════════════════════════╝ */
-
-/* Tablet */
-@media(max-width:900px){
-  .editor{width:240px}
-  .sidebar{width:220px}
-  .sw{width:120px}
-  .spd{width:160px}
-  .kbds{display:none}
-}
-
-/* Mobile */
-@media(max-width:768px){
-
-  /* Topbar */
-  .topbar{padding:0 10px;height:48px;gap:6px}
-  .logo-text{display:none}
-  .logo-mark{width:32px;height:32px}
-  .tab{padding:5px 10px;font-size:11px}
-  .act-label{display:none}
-  .act-btn{padding:0;width:36px;height:36px;justify-content:center;border-radius:var(--r2)}
-
-  /* Hide desktop panels */
-  .editor{display:none!important}
-  .sidebar{display:none!important}
-  .kbds{display:none}
-
-  /* Playbar mobile */
-  .playbar{
-    height:auto;flex-wrap:wrap;gap:8px;
-    padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
-  }
-  .sdot{display:none}
-  .play-btn{width:50px;height:50px}
-  .play-btn svg{width:20px;height:20px}
-  .stop-btn{width:42px;height:42px}
-  .stop-btn svg{width:15px;height:15px}
-  .spd{width:100%;order:10;gap:10px}
-  .spd-lbl{font-size:11px}
-  input[type=range]{height:5px}
-  input[type=range]::-webkit-slider-thumb{width:20px;height:20px}
-  .prg{flex:1;min-width:120px}
-  .prg-bar{height:5px}
-  .prg-t{font-size:11px}
-
-  /* Mobile nav visible */
-  .m-nav{display:flex}
-
-  /* Prompter text smaller on mobile */
-  .pt{font-size:26px}
-  .ct{padding:40vw 6% 40vw}
-
-  /* PiP smaller on mobile */
-  .pip{width:110px;height:62px;border-radius:10px}
-
-  /* Countdown smaller */
-  .cdn{font-size:90px}
-}
-
-@media(max-width:400px){
-  .pt{font-size:22px}
-  .tab{padding:4px 8px;font-size:10px}
-  .mnb{padding:5px 8px}
-}
-</style>
+    @media (max-width:900px){
+      .panel{width:260px}
+    }
+    @media (max-width:820px){
+      .app-body .panel{display:none!important}
+      .mobile-bar{display:flex}
+      .transport .meta{display:none}
+      .head-actions .btn .lbl{display:none}
+      .tabs button{padding:7px 12px;font-size:.78rem}
+    }
+    @media (max-width:520px){
+      .brand span:last-child{display:none}
+      .prog{order:10;width:100%}
+    }
+  </style>
 </head>
 <body>
-
-<!-- ═══ TOPBAR ═══ -->
-<header class="topbar">
-  <div class="logo">
-    <div class="logo-mark">
-      <svg viewBox="0 0 14 14"><rect x="1" y="2" width="12" height="1.5" rx=".75"/><rect x="1" y="6.25" width="8.5" height="1.5" rx=".75"/><rect x="1" y="10.5" width="10" height="1.5" rx=".75"/></svg>
+  <header class="app-head">
+    <div class="brand" aria-label="FlowPrompter">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <span>FlowPrompter</span>
     </div>
-    <span class="logo-text">Prompter<em>Studio</em> Pro</span>
-  </div>
-
-  <div class="tabs">
-    <button class="tab on" id="t-edit" onclick="switchTab('edit')">Editör</button>
-    <button class="tab" id="t-run" onclick="switchTab('run')">Prompter</button>
-  </div>
-
-  <div class="top-acts">
-    <button class="act-btn" id="cam-btn" onclick="toggleCam()">
-      <svg viewBox="0 0 16 16"><path d="M1 4.5A1.5 1.5 0 012.5 3h8A1.5 1.5 0 0112 4.5v.382l2.553-1.276A.5.5 0 0115 4v8a.5.5 0 01-.447.894L12 11.618V12a1.5 1.5 0 01-1.5 1.5h-8A1.5 1.5 0 011 12V4.5z"/></svg>
-      <span class="act-label">Kamera</span>
-    </button>
-    <button class="act-btn" id="rec-btn" onclick="toggleRec()" style="display:none">
-      <svg viewBox="0 0 16 16" id="rec-icon"><circle cx="8" cy="8" r="5.5"/></svg>
-      <span class="act-label" id="rec-lbl">Kayıt</span>
-    </button>
-    <button class="act-btn" onclick="goFull()">
-      <svg class="fs-icon" viewBox="0 0 16 16"><path d="M1 1h5v1.5H2.5V4H1V1zm9 0h5v3h-1.5V2.5H10V1zM1 10h1.5v1.5H4V13H1v-3zm10.5 1.5H10V13h5v-3h-1.5v1.5z"/></svg>
-      <span class="act-label">Tam Ekran</span>
-    </button>
-  </div>
-</header>
-
-<!-- ═══ MAIN ═══ -->
-<main class="main">
-
-  <!-- EDITOR (desktop) -->
-  <section class="editor" id="editor">
-    <div class="ed-head">
-      <span class="sec-lbl">Metin Editörü</span>
-      <span class="wstat" id="wstat">0 kl</span>
+    <div class="tabs" role="tablist" aria-label="Görünüm">
+      <button type="button" role="tab" id="tab-editor" aria-selected="true" data-tab="editor">Editör</button>
+      <button type="button" role="tab" id="tab-prompter" aria-selected="false" data-tab="prompter">Kaydır</button>
     </div>
-    <textarea class="ta" id="ta" placeholder="Metninizi buraya yazın veya yapıştırın…&#10;&#10;Hazır olduğunuzda ▶ tuşuna veya Boşluk tuşuna basın."></textarea>
-  </section>
+    <div class="head-actions">
+      <button type="button" class="btn small primary" id="btn-cam-top" aria-pressed="false">
+        <span class="lbl">Kamera</span>
+      </button>
+      <button type="button" class="btn small ghost icon-only" id="btn-rec-top" aria-label="Kayıt" aria-pressed="false" hidden>●</button>
+      <button type="button" class="btn small" id="btn-fs" aria-pressed="false" title="Tam ekran (F)"><span class="lbl">Tam ekran</span></button>
+    </div>
+  </header>
 
-  <!-- STAGE WRAP -->
-  <div class="stage-wrap">
-
-    <!-- PROMPTER -->
-    <div class="stage" id="stage">
-      <div class="vp" id="vp">
-        <div class="ct" id="ct">
-          <div class="pt" id="pt"></div>
-        </div>
+  <div class="app-body">
+    <aside class="panel" id="panel-editor" aria-label="Metin düzenleyici">
+      <div class="panel-head">
+        <h2>Metin</h2>
+        <span class="meta" id="stats-desktop">0 kl</span>
       </div>
-
-      <!-- Focus/Blur overlay -->
-      <div class="fov" id="fov">
-        <div class="blur-t" id="blur-t"></div>
-        <div class="fb">
-          <div class="fb-fill"></div>
-          <div class="fl-t"></div>
-          <div class="fl-b"></div>
-        </div>
-        <div class="blur-b" id="blur-b"></div>
+      <div class="editor">
+        <textarea id="textarea-desktop" spellcheck="false" placeholder="Konuşma metninizi buraya yazın…&#10;&#10;İpucu: Boşluk ile oynat/durdur, ok tuşları ile hız ±5."></textarea>
       </div>
+    </aside>
 
-      <!-- Countdown -->
-      <div class="cdo" id="cdo"><div class="cdn" id="cdn">3</div></div>
-
-      <!-- Camera PiP -->
-      <div class="pip" id="pip" style="display:none">
-        <video id="camv" autoplay muted playsinline style="display:none"></video>
-        <div class="pip-no" id="pip-no">
-          <svg viewBox="0 0 16 16"><path d="M1 4.5A1.5 1.5 0 012.5 3h8A1.5 1.5 0 0112 4.5v.382l2.553-1.276A.5.5 0 0115 4v8a.5.5 0 01-.447.894L12 11.618V12a1.5 1.5 0 01-1.5 1.5h-8A1.5 1.5 0 011 12V4.5z"/></svg>
-          Bağlanıyor…
-        </div>
-        <div class="pip-ov">
-          <div class="rdot" id="rdot"></div>
-          <span class="rtm" id="rtm">00:00</span>
-          <div class="psz">
-            <button onclick="sizePip('s')">S</button>
-            <button onclick="sizePip('m')">M</button>
-            <button onclick="sizePip('l')">L</button>
+    <section class="center" id="stage-column">
+      <div class="stage-wrap" id="stage" role="region" aria-label="Teleprompter">
+        <div class="viewport" id="viewport">
+          <div class="mirror-shell" id="mirrorShell">
+            <div class="track" id="track">
+              <div class="script" id="script"></div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- PLAYBAR -->
-    <div class="playbar">
-      <div class="sdot" id="sdot"></div>
-      <button class="play-btn" id="pbtn" onclick="togglePlay()">
-        <svg viewBox="0 0 17 17"><path id="ppath" d="M4.5 3.5l9 4.5-9 4.5V3.5z"/></svg>
-      </button>
-      <button class="stop-btn" onclick="resetPlay()">
-        <svg viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" rx="1.5"/></svg>
-      </button>
-      <div class="spd">
-        <span class="spd-lbl">Hız</span>
-        <input type="range" id="spd-sl" min="0" max="100" value="30">
-        <span class="sv" id="spd-v">30</span>
-        <span class="wpm-badge" id="wpm-badge">~120wpm</span>
-      </div>
-      <div class="prg">
-        <div class="prg-bar" id="prg-bar" onclick="seekTo(event)">
-          <div class="prg-fill" id="prg-fill"></div>
+        <div class="blur-fade top" id="blurTop"></div>
+        <div class="blur-fade bot" id="blurBot"></div>
+        <div class="reading-layer" id="readingLayer">
+          <div class="rl-top" id="rlTop"></div>
+          <div class="rl-band"><div class="rl-line"></div></div>
+          <div class="rl-bot" id="rlBot"></div>
         </div>
-        <span class="prg-t" id="prg-t">0:00</span>
-      </div>
-      <div class="kbds">
-        <span class="kbd">Space</span>
-        <span class="kbd">↑↓</span>
-        <span class="kbd">R</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- SIDEBAR (desktop) -->
-  <aside class="sidebar" id="sidebar">
-
-    <div class="cs">
-      <div class="cs-t">Yazı Tipi Ailesi</div>
-      <select class="fsel" id="fsel" onchange="applyFont(this.value)">
-        <option value="'Instrument Serif',serif">Instrument Serif</option>
-        <option value="'Playfair Display',serif">Playfair Display</option>
-        <option value="'Lora',serif">Lora</option>
-        <option value="'DM Sans',sans-serif">DM Sans</option>
-        <option value="'Outfit',sans-serif">Outfit</option>
-        <option value="'JetBrains Mono',monospace">JetBrains Mono</option>
-      </select>
-    </div>
-
-    <div class="cs">
-      <div class="cs-t">Tipografi</div>
-      <div class="cr"><span class="cl">Boyut</span><div class="sw"><input type="range" id="sl-fs" min="16" max="96" value="40" step="2"><span class="sv" id="v-fs">40px</span></div></div>
-      <div class="cr"><span class="cl">Satır Aralığı</span><div class="sw"><input type="range" id="sl-lh" min="1.0" max="2.8" value="1.55" step="0.05"><span class="sv" id="v-lh">1.55</span></div></div>
-      <div class="cr"><span class="cl">Harf Aralığı</span><div class="sw"><input type="range" id="sl-ls" min="-2" max="10" value="0" step="0.5"><span class="sv" id="v-ls">0px</span></div></div>
-      <div class="cr"><span class="cl">Kelime Aralığı</span><div class="sw"><input type="range" id="sl-ws" min="-2" max="20" value="0" step="1"><span class="sv" id="v-ws">0px</span></div></div>
-      <div class="cr"><span class="cl">Metin Genişliği</span><div class="sw"><input type="range" id="sl-tw" min="30" max="95" value="76" step="1"><span class="sv" id="v-tw">76%</span></div></div>
-      <div class="cr"><span class="cl">Opaklık</span><div class="sw"><input type="range" id="sl-op" min="30" max="100" value="100" step="1"><span class="sv" id="v-op">100%</span></div></div>
-      <div class="cr"><span class="cl">Paragraf Aralığı</span><div class="sw"><input type="range" id="sl-pg" min="0" max="80" value="0" step="4"><span class="sv" id="v-pg">0px</span></div></div>
-      <div class="cr"><span class="cl">Stil</span>
-        <div class="row2">
-          <button class="ib" id="b-bold" onclick="toggleBold()"><svg viewBox="0 0 14 14"><text x="2" y="11" font-family="serif" font-weight="700" font-size="12" fill="currentColor">B</text></svg></button>
-          <button class="ib" id="b-ital" onclick="toggleItal()"><svg viewBox="0 0 14 14"><text x="3" y="11" font-family="serif" font-style="italic" font-size="12" fill="currentColor">I</text></svg></button>
-          <button class="ib" id="b-shad" onclick="toggleShad()"><svg viewBox="0 0 14 14"><text x="1" y="11" font-size="11" fill="currentColor">S</text></svg></button>
+        <div class="vignette" id="vignetteEl"></div>
+        <div class="countdown" id="countdown" aria-hidden="true"><span id="cdNum">3</span></div>
+        <div class="pip" id="pip" hidden>
+          <video id="pipVideo" muted playsinline autoplay></video>
+          <div class="ph" id="pipPh">Kamera bağlanıyor…</div>
         </div>
       </div>
-      <div class="cr"><span class="cl">Hizalama</span>
-        <div class="tg" id="alg-grp">
-          <button class="tp on" onclick="setAlign('left',this)">Sol</button>
-          <button class="tp" onclick="setAlign('center',this)">Orta</button>
-          <button class="tp" onclick="setAlign('right',this)">Sağ</button>
-        </div>
-      </div>
-      <div class="cr" style="align-items:flex-start">
-        <span class="cl">Renk</span>
-        <div class="swatches">
-          <div class="sw-c on" style="background:#f0ece4" onclick="setTxtClr('#f0ece4',this)"></div>
-          <div class="sw-c" style="background:#fff" onclick="setTxtClr('#fff',this)"></div>
-          <div class="sw-c" style="background:#ffd680" onclick="setTxtClr('#ffd680',this)"></div>
-          <div class="sw-c" style="background:#72ff9a" onclick="setTxtClr('#72ff9a',this)"></div>
-          <div class="sw-c" style="background:#82c8ff" onclick="setTxtClr('#82c8ff',this)"></div>
-          <div class="sw-c" style="background:#ff8282" onclick="setTxtClr('#ff8282',this)"></div>
-          <input type="color" value="#f0ece4" onchange="setTxtClrRaw(this.value)">
-        </div>
-      </div>
-    </div>
 
-    <div class="cs">
-      <div class="cs-t">Odak & Bulanıklık</div>
-      <div class="cr"><span class="cl">Odak Çizgisi</span><button class="ib on" id="b-foc" onclick="toggleFoc()"><svg viewBox="0 0 14 14"><rect x="1" y="6" width="12" height="2" rx="1"/></svg></button></div>
-      <div class="cr"><span class="cl">Satır Vurgusu</span><button class="ib" id="b-hl" onclick="toggleHl()" title="Odaktaki metni vurgula"><svg viewBox="0 0 14 14"><rect x="1" y="5" width="12" height="4" rx="1" fill="currentColor" opacity=".4"/><rect x="1" y="6.5" width="12" height="1" rx=".5"/></svg></button></div>
-      <div class="cr"><span class="cl">Konum</span>
-        <div class="tg">
-          <button class="tp" id="fp-top" onclick="setFocPos('top')">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:3px"><rect x="0" y="1" width="11" height="2" rx="1"/><rect x="1" y="5" width="9" height="1.2" rx=".6" opacity=".3"/><rect x="1" y="8" width="9" height="1.2" rx=".6" opacity=".3"/></svg>Üst
-          </button>
-          <button class="tp on" id="fp-mid" onclick="setFocPos('mid')">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:3px"><rect x="1" y="1" width="9" height="1.2" rx=".6" opacity=".3"/><rect x="0" y="4.5" width="11" height="2" rx="1"/><rect x="1" y="8" width="9" height="1.2" rx=".6" opacity=".3"/></svg>Orta
-          </button>
-          <button class="tp" id="fp-bot" onclick="setFocPos('bot')">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor" style="display:inline;vertical-align:middle;margin-right:3px"><rect x="1" y="1" width="9" height="1.2" rx=".6" opacity=".3"/><rect x="1" y="4" width="9" height="1.2" rx=".6" opacity=".3"/><rect x="0" y="7.5" width="11" height="2" rx="1"/></svg>Alt
-          </button>
-        </div>
-      </div>
-      <div class="cr"><span class="cl">Odak Bölgesi</span><div class="sw"><input type="range" id="sl-fh" min="6" max="40" value="16" step="1"><span class="sv" id="v-fh">16%</span></div></div>
-      <div class="cr"><span class="cl">Bulanıklık</span><div class="sw"><input type="range" id="sl-bl" min="0" max="16" value="5" step="0.5"><span class="sv" id="v-bl">5px</span></div></div>
-      <div class="cr"><span class="cl">Gölge Koyuluğu</span><div class="sw"><input type="range" id="sl-fd" min="0" max="100" value="85" step="1"><span class="sv" id="v-fd">85%</span></div></div>
-    </div>
-
-    <div class="cs">
-      <div class="cs-t">Ayna Modu</div>
-      <div class="mp-wrap">
-        <button class="mp-btn on" id="mp-off" onclick="setMirror('off')">Kapalı</button>
-        <button class="mp-btn" id="mp-h" onclick="setMirror('h')">Yatay</button>
-        <button class="mp-btn" id="mp-v" onclick="setMirror('v')">Dikey</button>
-        <button class="mp-btn" id="mp-hv" onclick="setMirror('hv')">İkisi de</button>
-      </div>
-      <div style="font-size:10px;color:var(--t3);line-height:1.55;margin-top:8px;padding:8px;background:var(--bg2);border-radius:var(--r1)">
-        💡 <strong style="color:var(--t2)">Cam prompter:</strong> Yatay modu açın. Metin cam üzerinde doğru okunur.
-      </div>
-    </div>
-
-    <div class="cs">
-      <div class="cs-t">Kamera & Kayıt</div>
-      <div class="cam-row">
-        <div class="c-ind" id="c-ind"></div>
-        <div class="c-info" id="c-info">Kamera kapalı</div>
-        <span class="rec-badge" id="rec-badge" style="display:none">● <span id="rec-t">00:00</span></span>
-      </div>
-      <div class="tg">
-        <button class="tp" id="cp-tl" onclick="movePip('tl')">↖ Sol Üst</button>
-        <button class="tp" id="cp-tr" onclick="movePip('tr')" >↗ Sağ Üst</button>
-        <button class="tp" id="cp-bl" onclick="movePip('bl')">↙ Sol Alt</button>
-        <button class="tp" id="cp-br" onclick="movePip('br')">↘ Sağ Alt</button>
-      </div>
-      <div class="cr" style="margin-top:6px">
-        <span class="cl">Ses Kaydı</span>
-        <button class="ib on" id="b-audio" onclick="toggleAudio()" title="Ses kaydet / sessiz">
-          <svg viewBox="0 0 14 14" fill="currentColor"><path d="M7 1a2 2 0 0 1 2 2v3.5a2 2 0 0 1-4 0V3a2 2 0 0 1 2-2zm-3 5.5a.5.5 0 0 1 1 0A2.5 2.5 0 0 0 9.5 9a.5.5 0 0 1 1 0 3.5 3.5 0 0 1-3 3.46V13h1a.5.5 0 0 1 0 1H6a.5.5 0 0 1 0-1h1v-.54A3.5 3.5 0 0 1 4 9a.5.5 0 0 1 .5-.5z"/></svg>
+      <div class="transport" id="transport">
+        <div class="status-dot" id="statusDot" aria-hidden="true"></div>
+        <button type="button" class="play-toggle" id="btn-play" aria-pressed="false" aria-label="Oynat">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </button>
-        <span class="cl">Kamera Çevir</span>
-        <button class="ib" id="b-flip" onclick="flipCam()" title="Ön/arka kamera">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 5a5 5 0 0 1 9.5-1M12 9a5 5 0 0 1-9.5 1"/><path d="M11 3.5l1 1.5-1.5.5M3 10.5L2 9l1.5-.5"/></svg>
-        </button>
-      </div>
-      <button class="dl-btn" id="dl-btn" style="display:none" onclick="dlRec()">
-        <svg viewBox="0 0 14 14"><path d="M7 1v8M4 7l3 3 3-3M1 11h12v2H1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
-        Kaydı İndir
-      </button>
-    </div>
-
-    <div class="cs">
-      <div class="cs-t">Oynatma</div>
-      <div class="cr"><span class="cl">Geri Sayım</span><button class="ib on" id="b-cd" onclick="toggleCd()"><svg viewBox="0 0 14 14"><circle cx="7" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 5.5V8l1.8 1.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg></button></div>
-      <div class="cr"><span class="cl">Oto-Tekrar</span><button class="ib" id="b-lp" onclick="toggleLoop()"><svg viewBox="0 0 14 14"><path d="M2 5h8.5M10 3l2.5 2L10 7M12 9H3.5M4 11l-2.5-2L4 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg></button></div>
-    </div>
-
-    <div class="cs">
-      <div class="cs-t">Renk Teması</div>
-      <div class="tdots">
-        <div class="tdot on" data-t="def" onclick="setTheme('def',this)"></div>
-        <div class="tdot" data-t="amber" onclick="setTheme('amber',this)"></div>
-        <div class="tdot" data-t="hc" onclick="setTheme('hc',this)"></div>
-        <div class="tdot" data-t="light" onclick="setTheme('light',this)"></div>
-        <div class="tdot" data-t="green" onclick="setTheme('green',this)"></div>
-        <div class="tdot" data-t="blue" onclick="setTheme('blue',this)"></div>
-      </div>
-    </div>
-
-    <div class="cs">
-      <div class="cs-t">Süre Tahmini</div>
-      <div class="tcard">
-        <div class="trow">
-          <div class="ti"><div class="tv" id="est-t">0:00</div><div class="tl">Tahmini Süre</div></div>
-          <div class="ti"><div class="tv" id="wc">0</div><div class="tl">Kelime</div></div>
+        <button type="button" class="btn small" id="btn-reset" title="Sıfırla (R)">Sıfırla</button>
+        <span class="timer" id="elapsed">0:00</span>
+        <div class="prog">
+          <div class="prog-bar" id="progBar" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+            <div class="prog-fill" id="progFill"></div>
+          </div>
+        </div>
+        <div class="row" style="gap:8px;flex-wrap:nowrap">
+          <span class="meta" style="white-space:nowrap">Hız</span>
+          <div class="range-wrap" style="max-width:220px">
+            <input type="range" id="speed" min="0" max="100" value="28" aria-label="Kaydırma hızı" />
+          </div>
+          <span class="val" id="speedVal">28</span>
+          <span class="meta" id="wpmEst">~115 wpm</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="cs">
-      <div class="cs-t">Kısayollar</div>
-      <div class="cr"><span class="cl" style="font-size:11px">Oynat/Durdur</span><span class="kbd">Space</span></div>
-      <div class="cr"><span class="cl" style="font-size:11px">Hız ±5</span><div style="display:flex;gap:3px"><span class="kbd">↑</span><span class="kbd">↓</span></div></div>
-      <div class="cr"><span class="cl" style="font-size:11px">Sıfırla</span><span class="kbd">R</span></div>
-      <div class="cr"><span class="cl" style="font-size:11px">Tam Ekran</span><span class="kbd">F</span></div>
-      <div class="cr"><span class="cl" style="font-size:11px">Kamera</span><span class="kbd">C</span></div>
-    </div>
-
-  </aside>
-</main>
-
-<!-- ═══ MOBILE NAV ═══ -->
-<nav class="m-nav" id="m-nav">
-  <button class="mnb" id="mn-ed" onclick="openDr('ed')">
-    <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-    <span>Editör</span>
-  </button>
-  <button class="mnb on" id="mn-play" onclick="togglePlay()">
-    <svg viewBox="0 0 24 24"><path id="mp-path" d="M8 5v14l11-7z"/></svg>
-    <span id="mn-play-lbl">Oynat</span>
-  </button>
-  <button class="mnb" id="mn-set" onclick="openDr('set')">
-    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-4c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h4c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-    <span>Ayarlar</span>
-  </button>
-  <button class="mnb" id="mn-cam" onclick="toggleCam()">
-    <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-    <span id="mn-cam-lbl">Kamera</span>
-  </button>
-</nav>
-
-<!-- ═══ DRAWER BACKDROP ═══ -->
-<div class="m-backdrop" id="m-back" onclick="closeDr()"></div>
-
-<!-- ═══ EDITOR DRAWER (mobile) ═══ -->
-<div class="m-drawer" id="dr-ed">
-  <div class="drg"></div>
-  <div class="drt">Metin Editörü</div>
-  <div class="drb">
-    <div class="ed-meta">
-      <span id="wstat-m">0 kl</span>
-      <button class="done-btn" onclick="closeDr()">✓ Tamam</button>
-    </div>
-    <textarea class="ta" id="ta-m" style="width:100%;min-height:240px;flex:none;border-radius:0" placeholder="Metninizi buraya yazın…"></textarea>
+    <aside class="panel" id="panel-settings" aria-label="Ayarlar">
+      <div class="panel-head">
+        <h2>Ayarlar</h2>
+        <span class="meta" id="est-desktop">0:00</span>
+      </div>
+      <div class="settings-body" id="settings-root"></div>
+    </aside>
   </div>
-</div>
 
-<!-- ═══ SETTINGS DRAWER (mobile) ═══ -->
-<div class="m-drawer" id="dr-set">
-  <div class="drg"></div>
-  <div class="drt">Ayarlar</div>
-  <div class="drb" id="dr-set-body"></div>
-</div>
+  <nav class="mobile-bar" id="mobileBar" aria-label="Mobil kısayollar">
+    <button type="button" data-sheet="editor">Metin</button>
+    <button type="button" data-sheet="settings">Ayarlar</button>
+    <button type="button" data-sheet="cam">Kamera</button>
+  </nav>
 
-<script>
-'use strict';
+  <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
 
-/* ── HELPERS ── */
-const $  = id => document.getElementById(id);
-const el = document.createElement.bind(document);
+  <div class="sheet" id="sheet-editor" aria-hidden="true" role="dialog" aria-label="Metin editörü">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Metin</div>
+    <div class="sheet-body">
+      <div class="row" style="margin-bottom:10px">
+        <span class="meta" id="stats-mobile">0 kl</span>
+      </div>
+      <textarea id="textarea-mobile" spellcheck="false" style="width:100%;min-height:46dvh;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--elev)"></textarea>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn primary" data-close-sheet>Tamam</button>
+    </div>
+  </div>
 
-/* ── STATE ── */
-const S = {
-  play:false, cd:false, cdOn:true, loop:false,
-  foc:true, bold:false, ital:false, shad:false, hl:false,
-  mh:false, mv:false, focPos:'mid',
-  pos:0, max:0, raf:null, lt:null, ms:0,
-  spd:30, theme:'def',
-  camOn:false, recOn:false, recTs:null, recIv:null,
-  chunks:[], mr:null, stream:null, blob:null, camPos:'br',
-  audioOn:true, facingMode:'user', cdIv:null,
-};
+  <div class="sheet" id="sheet-settings" aria-hidden="true" role="dialog" aria-label="Ayarlar">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Ayarlar</div>
+    <div class="sheet-body" id="settings-mobile"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn primary" data-close-sheet>Kapat</button>
+    </div>
+  </div>
 
-/* ── DOM ── */
-const stage=$('stage'), ct=$('ct'), pt=$('pt');
-const fov=$('fov'), cdo=$('cdo'), cdn=$('cdn');
-const pip=$('pip'), camv=$('camv'), pipNo=$('pip-no');
-const cInd=$('c-ind'), cInfo=$('c-info');
-const recBadge=$('rec-badge'), recT=$('rec-t');
-const rdot=$('rdot'), rtm=$('rtm');
-const prgFill=$('prg-fill'), prgT=$('prg-t'), sdot=$('sdot');
+  <div class="sheet" id="sheet-cam" aria-hidden="true" role="dialog" aria-label="Kamera">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Kamera</div>
+    <div class="sheet-body" id="cam-mobile-body"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn primary" data-close-sheet>Kapat</button>
+    </div>
+  </div>
 
-/* ════════════════════════════
-   INIT
-════════════════════════════ */
-function init(){
-  buildSettingsDr();
-  loadPrefs();
-  syncTxt();
-  bindAll();
-  makeDraggable(pip);
-  updateWpmBadge();
-}
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-/* ════════════════════════════
-   TEXT SYNC
-════════════════════════════ */
-function syncTxt(){
-  const v = $('ta').value;
-  pt.textContent = v;
-  const w = v.trim() ? v.trim().split(/\s+/).length : 0;
-  const stat = w + ' kl · ' + v.length + ' kr';
-  $('wstat').textContent = stat;
-  $('wc').textContent = w;
-  if($('wstat-m')) $('wstat-m').textContent = stat;
-  if($('wc-m')) $('wc-m').textContent = w;
-  calcTime();
-  setTimeout(()=>{ S.max = Math.max(0, ct.scrollHeight - $('vp').clientHeight); }, 50);
-}
+  <script>
+  (function () {
+    'use strict';
 
-/* ════════════════════════════
-   BIND ALL EVENTS
-════════════════════════════ */
-function bindAll(){
-  $('ta').addEventListener('input', ()=>{ syncTxt(); savePrefs(); });
+    const $ = (sel, root) => (root || document).querySelector(sel);
+    const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 
-  // Speed
-  $('spd-sl').addEventListener('input', e=>{
-    S.spd = +e.target.value;
-    $('spd-v').textContent = S.spd;
-    updateWpmBadge();
-    syncMob('spd-m', S.spd); calcTime(); savePrefs();
-  });
+    const prefersReduceMotion = () =>
+      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Typography sliders
-  slBind('sl-fs','v-fs', v=>{ pt.style.fontSize=v+'px'; updateScrollMax(); }, v=>v+'px');
-  slBind('sl-lh','v-lh', v=>{ pt.style.lineHeight=v; updateScrollMax(); }, v=>parseFloat(v).toFixed(2));
-  slBind('sl-ls','v-ls', v=>{ pt.style.letterSpacing=v+'px'; }, v=>v+'px');
-  slBind('sl-ws','v-ws', v=>{ pt.style.wordSpacing=v+'px'; }, v=>v+'px');
-  slBind('sl-tw','v-tw', v=>{
-    const h=((100-v)/2).toFixed(1);
-    ct.style.paddingLeft=h+'%'; ct.style.paddingRight=h+'%';
-    updateScrollMax();
-  }, v=>v+'%');
-  slBind('sl-op','v-op', v=>{ pt.style.opacity=v/100; savePrefs(); }, v=>v+'%');
-  slBind('sl-pg','v-pg', v=>{ pt.style.marginBlockEnd=v+'px'; updateScrollMax(); savePrefs(); }, v=>v+'px');
+    const LS_KEY = 'flowprompter_v1';
 
-  // Focus/blur sliders
-  slBind('sl-fh','v-fh', v=>{ stage.style.setProperty('--f-h',v+'%'); }, v=>v+'%');
-  slBind('sl-bl','v-bl', v=>{ setBlur(v); }, v=>v+'px');
-  slBind('sl-fd','v-fd', v=>{ setFade(v/100); }, v=>v+'%');
-
-  // Keyboard
-  document.addEventListener('keydown', e=>{
-    if(e.target.tagName==='TEXTAREA') return;
-    if(e.code==='Space'){e.preventDefault();togglePlay();}
-    if(e.code==='ArrowUp'){e.preventDefault();adjSpd(5);}
-    if(e.code==='ArrowDown'){e.preventDefault();adjSpd(-5);}
-    if(e.code==='KeyR') resetPlay();
-    if(e.code==='KeyF') goFull();
-    if(e.code==='KeyC') toggleCam();
-  });
-
-  // Mobile textarea sync
-  const tam = $('ta-m');
-  if(tam){
-    tam.addEventListener('input', ()=>{
-      $('ta').value = tam.value;
-      syncTxt();
-    });
-  }
-
-  window.addEventListener('resize', updateScrollMax);
-
-  // Progress bar touch
-  const prg=$('prg-bar');
-  prg.addEventListener('touchstart', seekTo, {passive:true});
-  prg.addEventListener('touchmove',  seekTo, {passive:true});
-
-  // Pinch-to-zoom → font size
-  let _pinchDist=null;
-  stage.addEventListener('touchstart',e=>{
-    if(e.touches.length===2){
-      _pinchDist=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
-    }
-  },{passive:true});
-  stage.addEventListener('touchmove',e=>{
-    if(e.touches.length!==2||_pinchDist===null) return;
-    const d=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);
-    const ratio=d/_pinchDist;
-    if(Math.abs(ratio-1)>0.04){
-      const sl=$('sl-fs'); if(!sl) return;
-      const cur=parseFloat(pt.style.fontSize)||40;
-      const nv=Math.max(14,Math.min(96,Math.round(cur*ratio)));
-      pt.style.fontSize=nv+'px'; sl.value=nv; $('v-fs').textContent=nv+'px';
-      _pinchDist=d; updateScrollMax();
-    }
-  },{passive:true});
-  stage.addEventListener('touchend',()=>{ _pinchDist=null; },{passive:true});
-
-  // Fullscreen icon update
-  const onFsChange=()=>{
-    const inFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
-    document.querySelectorAll('.fs-icon').forEach(ic=>{
-      ic.innerHTML = inFs
-        ? '<path d="M5 1H1v4h1.5V2.5H5V1zm6 0h4v4h-1.5V2.5H11V1zM1 10h4v1.5H2.5V13H1v-3zm14 0h-4v1.5h2.5V13H15v-3z"/>'
-        : '<path d="M1 1h5v1.5H2.5V4H1V1zm9 0h5v3h-1.5V2.5H10V1zM1 10h1.5v1.5H4V13H1v-3zm10.5 1.5H10V13h5v-3h-1.5v1.5z"/>';
-    });
-  };
-  document.addEventListener('fullscreenchange', onFsChange);
-  document.addEventListener('webkitfullscreenchange', onFsChange);
-}
-
-function slBind(id, vid, apply, fmt){
-  const el = $(id); if(!el) return;
-  el.addEventListener('input', e=>{
-    const v = parseFloat(e.target.value);
-    $(vid).textContent = fmt(v);
-    apply(v);
-  });
-}
-
-/* ════════════════════════════
-   PLAY / PAUSE / RESET
-════════════════════════════ */
-function togglePlay(){
-  if(S.cd) return;
-  S.play ? pauseIt() : startIt();
-}
-function startIt(){
-  if(S.spd===0){ showToast('⚠️ Hız 0 — kaydırma başlamaz'); return; }
-  if(S.cdOn && S.pos===0) runCd(); else beginScroll();
-}
-function runCd(){
-  S.cd=true; cdo.classList.add('on');
-  let n=3; cdn.textContent=n; animN();
-  S.cdIv=setInterval(()=>{
-    n--;
-    if(n<=0){clearInterval(S.cdIv);cdo.classList.remove('on');S.cd=false;beginScroll();}
-    else{cdn.textContent=n;animN();}
-  },1000);
-}
-function animN(){
-  cdn.style.transition='none'; cdn.style.transform='scale(1.4)'; cdn.style.opacity='.3';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    cdn.style.transition='transform .75s cubic-bezier(.2,0,0,1),opacity .75s';
-    cdn.style.transform='scale(1)'; cdn.style.opacity='1';
-  }));
-}
-function beginScroll(){
-  S.play=true; S.lt=null;
-  S.raf=requestAnimationFrame(loop);
-  setPlayUI(true);
-}
-function pauseIt(){
-  S.play=false; cancelAnimationFrame(S.raf);
-  setPlayUI(false);
-}
-function resetPlay(){
-  S.play=false; cancelAnimationFrame(S.raf);
-  if(S.cd){ clearInterval(S.cdIv); S.cd=false; cdo.classList.remove('on'); }
-  S.pos=0; S.ms=0; S.lt=null;
-  ct.style.transform='translateY(0)';
-  setPlayUI(false); updatePrg();
-}
-function setPlayUI(on){
-  $('ppath').setAttribute('d', on
-    ? 'M3 2.5h3.5v12H3V2.5zm6.5 0H13v12H9.5V2.5z'
-    : 'M4.5 3.5l9 4.5-9 4.5V3.5z');
-  sdot.className='sdot'+(on?' run':S.pos>0?' psd':'');
-  // Mobile
-  const mp=$('mp-path'), ml=$('mn-play-lbl'), mn=$('mn-play');
-  if(mp) mp.setAttribute('d', on?'M6 19h4V5H6zm8-14v14h4V5z':'M8 5v14l11-7z');
-  if(ml) ml.textContent = on?'Durdur':'Oynat';
-  if(mn) mn.classList.toggle('on',!on);
-}
-
-/* ════════════════════════════
-   TOAST NOTIFICATION
-════════════════════════════ */
-let _toastTm=null;
-function showToast(msg){
-  let t=$('toast-el');
-  if(!t){ t=document.createElement('div'); t.id='toast-el'; t.className='toast'; document.body.appendChild(t); }
-  t.textContent=msg; t.classList.add('on');
-  clearTimeout(_toastTm);
-  _toastTm=setTimeout(()=>t.classList.remove('on'),2200);
-}
-
-/* WPM badge güncelle */
-function updateWpmBadge(){
-  const wpm=S.spd===0?0:Math.round(75+(S.spd/100)*130);
-  const b=$('wpm-badge'); if(b) b.textContent=S.spd===0?'—':'~'+wpm+' wpm';
-  const bm=$('wpm-badge-m'); if(bm) bm.textContent=S.spd===0?'—':'~'+wpm+' wpm';
-}
-
-/* ════════════════════════════
-   LOCAL STORAGE
-════════════════════════════ */
-const LS_KEY='prompter_prefs';
-function savePrefs(){
-  try{
-    localStorage.setItem(LS_KEY, JSON.stringify({
-      text: $('ta').value,
-      spd: S.spd,
-      theme: S.theme,
-      fs: $('sl-fs').value,
-      lh: $('sl-lh').value,
-      ls: $('sl-ls').value,
-      ws: $('sl-ws').value,
-      tw: $('sl-tw').value,
-      op: $('sl-op').value,
-      fh: $('sl-fh').value,
-      bl: $('sl-bl').value,
-      fd: $('sl-fd').value,
-      bold: S.bold, ital: S.ital, shad: S.shad,
-      cdOn: S.cdOn, loop: S.loop, foc: S.foc,
-      focPos: S.focPos||'mid',
-      mirror: S.mh?(S.mv?'hv':'h'):(S.mv?'v':'off'),
-      camPos: S.camPos,
-      font: $('fsel').value,
-    }));
-  }catch(e){}
-}
-function loadPrefs(){
-  try{
-    const raw=localStorage.getItem(LS_KEY); if(!raw) return;
-    const p=JSON.parse(raw);
-    // Text
-    if(p.text){ $('ta').value=p.text; }
-    // Speed
-    if(p.spd!=null){ S.spd=p.spd; $('spd-sl').value=p.spd; $('spd-v').textContent=p.spd; }
-    // Theme
-    if(p.theme){ const dot=document.querySelector('.tdot[data-t="'+p.theme+'"]'); if(dot) setTheme(p.theme,dot); }
-    // Font family
-    if(p.font){ $('fsel').value=p.font; pt.style.fontFamily=p.font; }
-    // Sliders
-    const apply=(id,vid,styleFn,fmt)=>{
-      const el=$(id); if(!el||p[id.replace('sl-','')]==null) return;
-      const v=parseFloat(p[id.replace('sl-','')]);
-      el.value=v; $(vid).textContent=fmt(v); styleFn(v);
+    const state = {
+      playing: false,
+      countdown: false,
+      countdownEnabled: true,
+      loop: false,
+      speed: 28,
+      theme: 'def',
+      mirror: 'off',
+      bandPos: 'mid',
+      blurPx: 8,
+      vignette: 0.88,
+      fontScale: 1,
+      lineHeight: 1.52,
+      align: 'left',
+      loopRaf: null,
+      lastTs: 0,
+      pos: 0,
+      max: 0,
+      elapsedMs: 0,
+      manualDrag: false,
+      dragStartY: 0,
+      dragStartPos: 0,
+      facing: 'user',
+      camOn: false,
+      recOn: false,
+      audioOn: true,
+      pipCorner: 'tr',
+      stream: null,
+      recorder: null,
+      chunks: [],
+      recordBlob: null,
+      saveTimer: null,
     };
-    const slVal=(key)=>p[key]!=null?parseFloat(p[key]):null;
-    const fs=slVal('fs'); if(fs){$('sl-fs').value=fs;$('v-fs').textContent=fs+'px';pt.style.fontSize=fs+'px';}
-    const lh=slVal('lh'); if(lh){$('sl-lh').value=lh;$('v-lh').textContent=parseFloat(lh).toFixed(2);pt.style.lineHeight=lh;}
-    const ls=slVal('ls'); if(ls!=null){$('sl-ls').value=ls;$('v-ls').textContent=ls+'px';pt.style.letterSpacing=ls+'px';}
-    const ws=slVal('ws'); if(ws!=null){$('sl-ws').value=ws;$('v-ws').textContent=ws+'px';pt.style.wordSpacing=ws+'px';}
-    const tw=slVal('tw'); if(tw){$('sl-tw').value=tw;$('v-tw').textContent=tw+'%';const h=((100-tw)/2).toFixed(1);ct.style.paddingLeft=h+'%';ct.style.paddingRight=h+'%';}
-    const op=slVal('op'); if(op!=null){$('sl-op').value=op;$('v-op').textContent=op+'%';pt.style.opacity=op/100;}
-    const fh=slVal('fh'); if(fh){$('sl-fh').value=fh;$('v-fh').textContent=fh+'%';stage.style.setProperty('--f-h',fh+'%');}
-    const bl=slVal('bl'); if(bl!=null){$('sl-bl').value=bl;$('v-bl').textContent=bl+'px';setBlur(bl);}
-    const fd=slVal('fd'); if(fd!=null){$('sl-fd').value=fd;$('v-fd').textContent=fd+'%';setFade(fd/100);}
-    // Toggles
-    if(p.bold){ S.bold=true; $('b-bold').classList.add('on'); pt.style.fontWeight='700'; }
-    if(p.ital){ S.ital=true; $('b-ital').classList.add('on'); pt.style.fontStyle='italic'; }
-    if(p.shad){ S.shad=true; $('b-shad').classList.add('on'); pt.style.textShadow='0 2px 16px rgba(0,0,0,.8)'; }
-    if(p.cdOn===false){ S.cdOn=false; $('b-cd').classList.remove('on'); }
-    if(p.loop){ S.loop=true; $('b-lp').classList.add('on'); }
-    if(p.foc===false){ S.foc=false; fov.style.display='none'; $('b-foc').classList.remove('on'); }
-    if(p.focPos){ setFocPos(p.focPos); }
-    if(p.mirror){ setMirror(p.mirror); }
-    if(p.camPos){ S.camPos=p.camPos; }
-  }catch(e){}
-}
-function loop(ts){
-  if(!S.play) return;
-  if(!S.lt) S.lt=ts;
-  const dt=Math.min(ts-S.lt,60); S.lt=ts;
-  S.ms+=dt;
-  const fs=parseFloat(pt.style.fontSize)||40;
-  const px = S.spd===0 ? 0 : (S.spd/100)*fs*2.7*(dt/1000);
-  S.pos+=px;
-  if(S.pos>=S.max){
-    S.pos=S.max; ct.style.transform='translateY(-'+S.pos+'px)';
-    updatePrg();
-    if(S.loop){S.pos=0;ct.style.transform='translateY(0)';}
-    else pauseIt();
-    return;
-  }
-  ct.style.transform='translateY(-'+S.pos+'px)';
-  updatePrg();
-  S.raf=requestAnimationFrame(loop);
-}
-function updateScrollMax(){
-  S.max=Math.max(0, ct.scrollHeight - $('vp').clientHeight);
-}
-function updatePrg(){
-  const p=S.max>0?(S.pos/S.max)*100:0;
-  prgFill.style.width=Math.min(100,p).toFixed(1)+'%';
-  prgT.textContent=fmt(Math.floor(S.ms/1000));
-}
-function seekTo(e){
-  const r=$('prg-bar').getBoundingClientRect();
-  const cx = e.touches ? e.touches[0].clientX : e.clientX;
-  const p=Math.max(0,Math.min(1,(cx-r.left)/r.width));
-  S.pos=p*S.max; ct.style.transform='translateY(-'+S.pos+'px)'; updatePrg();
-}
-function fmt(s){return Math.floor(s/60)+':'+(s%60+'').padStart(2,'0')}
 
-/* ════════════════════════════
-   SPEED
-════════════════════════════ */
-function adjSpd(d){
-  const v=Math.max(0,Math.min(100,S.spd+d));
-  S.spd=v; $('spd-sl').value=v; $('spd-v').textContent=v;
-  syncMob('spd-m',v); calcTime(); updateWpmBadge(); savePrefs();
-}
-function syncMob(id,v){ const e=$(id); if(e) e.value=v; }
-
-/* ════════════════════════════
-   CALC TIME
-════════════════════════════ */
-function calcTime(){
-  const w=parseInt($('wc').textContent)||0;
-  const wpm=S.spd===0?0:Math.round(75+(S.spd/100)*130);
-  const t=fmt(wpm>0?Math.round((w/wpm)*60):0);
-  $('est-t').textContent=t;
-  if($('est-t-m')) $('est-t-m').textContent=t;
-  updateWpmBadge();
-}
-
-/* ════════════════════════════
-   TYPOGRAPHY
-════════════════════════════ */
-function applyFont(f){ pt.style.fontFamily=f; }
-function toggleBold(){ S.bold=!S.bold; $('b-bold').classList.toggle('on',S.bold); pt.style.fontWeight=S.bold?'700':'400'; }
-function toggleItal(){ S.ital=!S.ital; $('b-ital').classList.toggle('on',S.ital); pt.style.fontStyle=S.ital?'italic':'normal'; }
-function toggleShad(){ S.shad=!S.shad; $('b-shad').classList.toggle('on',S.shad); pt.style.textShadow=S.shad?'0 2px 16px rgba(0,0,0,.8)':'none'; }
-function setAlign(a,btn){
-  btn.closest('.tg').querySelectorAll('.tp').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on'); pt.style.textAlign=a;
-}
-function setTxtClr(c,el){ document.querySelectorAll('.sw-c').forEach(s=>s.classList.remove('on')); el.classList.add('on'); pt.style.color=c; }
-function setTxtClrRaw(c){ document.querySelectorAll('.sw-c').forEach(s=>s.classList.remove('on')); pt.style.color=c; }
-
-/* ════════════════════════════
-   FOCUS & BLUR
-════════════════════════════ */
-function toggleFoc(){
-  S.foc=!S.foc;
-  fov.style.display=S.foc?'':'none';
-  $('b-foc').classList.toggle('on',S.foc);
-  if($('b-foc-m')) $('b-foc-m').classList.toggle('on',S.foc);
-  savePrefs();
-}
-function toggleHl(){
-  S.hl=!S.hl;
-  stage.classList.toggle('hl-on',S.hl);
-  $('b-hl').classList.toggle('on',S.hl);
-  showToast(S.hl?'✨ Satır vurgusu açık':'Satır vurgusu kapalı');
-}
-
-/* focus position: top / mid / bot */
-function setFocPos(p){
-  S.focPos=p;
-  const blurT=$('blur-t'), blurB=$('blur-b');
-  const map={top:[0.05,4], mid:[1,1], bot:[4,0.05]};
-  const [ft,fb]=map[p]||[1,1];
-  blurT.style.flexGrow=ft;
-  blurB.style.flexGrow=fb;
-  ['top','mid','bot'].forEach(k=>{
-    const d=$('fp-'+k);   if(d) d.classList.toggle('on',k===p);
-    const m=$('fp-'+k+'-m'); if(m) m.classList.toggle('on',k===p);
-  });
-  savePrefs();
-}
-function setBlur(v){
-  const val=v+'px';
-  [$('blur-t'),$('blur-b')].forEach(e=>{
-    if(!e) return;
-    e.style.setProperty('-webkit-backdrop-filter','blur('+val+')');
-    e.style.backdropFilter='blur('+val+')';
-  });
-}
-function setFade(v){
-  [$('blur-t'),$('blur-b')].forEach(e=>{ if(e) e.style.opacity=v; });
-}
-
-/* ════════════════════════════
-   MIRROR
-════════════════════════════ */
-function setMirror(m){
-  ['off','h','v','hv'].forEach(k=>{
-    const b=$('mp-'+k); if(b) b.classList.toggle('on',k===m);
-    const bm=$('mp-'+k+'-m'); if(bm) bm.classList.toggle('on',k===m);
-  });
-  S.mh=m==='h'||m==='hv'; S.mv=m==='v'||m==='hv';
-  stage.classList.toggle('mh',S.mh); stage.classList.toggle('mv',S.mv);
-}
-
-/* ════════════════════════════
-   COUNTDOWN / LOOP
-════════════════════════════ */
-function toggleCd(){
-  S.cdOn=!S.cdOn;
-  $('b-cd').classList.toggle('on',S.cdOn);
-  if($('b-cd-m')) $('b-cd-m').classList.toggle('on',S.cdOn);
-}
-function toggleLoop(){
-  S.loop=!S.loop;
-  $('b-lp').classList.toggle('on',S.loop);
-  if($('b-lp-m')) $('b-lp-m').classList.toggle('on',S.loop);
-}
-
-/* ════════════════════════════
-   THEME
-════════════════════════════ */
-function setTheme(t,el){
-  document.querySelectorAll('.tdot').forEach(d=>d.classList.remove('on'));
-  document.querySelectorAll('.tdot[data-t="'+t+'"]').forEach(d=>d.classList.add('on'));
-  stage.className=stage.className.replace(/\bth-\w+/g,'').trim();
-  if(t!=='def') stage.classList.add('th-'+t);
-  S.theme=t; savePrefs();
-}
-
-/* ════════════════════════════
-   TAB SWITCH
-════════════════════════════ */
-function switchTab(t){
-  $('t-edit').classList.toggle('on',t==='edit');
-  $('t-run').classList.toggle('on',t==='run');
-  const isMob=window.innerWidth<=768;
-  if(isMob){ if(t==='edit') openDr('ed'); return; }
-  $('editor').classList.toggle('closed', t!=='edit');
-  setTimeout(updateScrollMax,80);
-}
-
-/* ════════════════════════════
-   FULLSCREEN
-════════════════════════════ */
-function goFull(){
-  const el=document.fullscreenElement||document.webkitFullscreenElement;
-  if(!el){
-    const req=document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen;
-    if(req) req.call(document.documentElement);
-  } else {
-    const ex=document.exitFullscreen||document.webkitExitFullscreen;
-    if(ex) ex.call(document);
-  }
-}
-
-/* ════════════════════════════
-   CAMERA
-════════════════════════════ */
-async function toggleCam(){
-  if(S.camOn){ stopCam(); return; }
-  pip.style.display='block'; pipNo.style.display='flex'; camv.style.display='none';
-  $('cam-btn').classList.add('hi');
-  cInfo.innerHTML='Kamera <strong>bağlanıyor…</strong>';
-  syncCamUI(false,false);
-  try{
-    const s=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:S.facingMode,width:{ideal:1280},height:{ideal:720}},
-      audio:S.audioOn
-    });
-    S.stream=s; S.camOn=true;
-    camv.srcObject=s; camv.style.display='block'; pipNo.style.display='none';
-    cInd.classList.add('on');
-    cInfo.innerHTML='Kamera <strong>aktif</strong>';
-    $('rec-btn').style.display='flex';
-    movePip(S.camPos);
-    const mn=$('mn-cam'),ml=$('mn-cam-lbl');
-    if(mn) mn.classList.add('gn');
-    if(ml) ml.textContent='Kapat';
-    syncCamUI(true,false);
-  }catch(e){
-    pip.style.display='none'; $('cam-btn').classList.remove('hi');
-    cInfo.textContent='Erişim reddedildi'; cInd.className='c-ind';
-    syncCamUI(false,false);
-    alert('Kamera izni verin:\nTarayıcı → Site Ayarları → Kamera: İzin Ver');
-  }
-}
-function stopCam(){
-  if(S.recOn) stopRec();
-  if(S.stream){ S.stream.getTracks().forEach(t=>t.stop()); S.stream=null; }
-  camv.srcObject=null; S.camOn=false;
-  pip.style.display='none'; cInd.className='c-ind';
-  cInfo.textContent='Kamera kapalı';
-  $('cam-btn').classList.remove('hi');
-  $('rec-btn').style.display='none';
-  const mn=$('mn-cam'),ml=$('mn-cam-lbl');
-  if(mn) mn.classList.remove('gn','rd');
-  if(ml) ml.textContent='Kamera';
-  syncCamUI(false,false);
-}
-
-/* mobil kamera UI senkronizasyonu */
-function syncCamUI(camOn, recOn){
-  const indM=$('c-ind-m'), infoM=$('c-info-m');
-  const togBtn=$('cam-tog-m'), togLbl=$('cam-tog-m-lbl');
-  const recBtn=$('rec-tog-m'), recLbl=$('rec-tog-m-lbl'), recIcon=$('rec-tog-m-icon');
-  const badgeM=$('rec-badge-m');
-
-  if(indM){ indM.className='c-ind'+(camOn?(recOn?' rec':' on'):''); }
-  if(infoM){ infoM.innerHTML = camOn ? (recOn?'Kayıt <strong>devam ediyor</strong>':'Kamera <strong>aktif</strong>') : 'Kamera kapalı'; }
-  if(togLbl){ togLbl.textContent = camOn ? 'Kamerayı Kapat' : 'Kamerayı Aç'; }
-  if(togBtn){ togBtn.style.color = camOn ? 'var(--gr)' : ''; togBtn.style.borderColor = camOn ? 'rgba(63,168,106,.4)' : ''; }
-  if(recBtn){ recBtn.style.display = camOn ? 'flex' : 'none'; }
-  if(recLbl){ recLbl.textContent = recOn ? 'Durdur' : 'Kayıt Başlat'; }
-  if(recIcon){ recIcon.innerHTML = recOn ? '<rect x="3" y="3" width="10" height="10" rx="1"/>' : '<circle cx="8" cy="8" r="5.5"/>'; }
-  if(recBtn){ recBtn.style.color = recOn ? 'var(--rd)' : ''; recBtn.style.borderColor = recOn ? 'rgba(201,74,74,.4)' : ''; }
-  if(badgeM){ badgeM.style.display = recOn ? 'inline-flex' : 'none'; }
-  // konum butonları
-  ['tl','tr','bl','br'].forEach(k=>{ const b=$('cp-'+k+'-m'); if(b) b.classList.toggle('on', k===S.camPos); });
-}
-function movePip(p){
-  S.camPos=p;
-  ['tl','tr','bl','br'].forEach(k=>{
-    const d=$('cp-'+k); if(d) d.classList.toggle('on',k===p);
-    const m=$('cp-'+k+'-m'); if(m) m.classList.toggle('on',k===p);
-  });
-  const pad=10;
-  pip.style.removeProperty('top'); pip.style.removeProperty('bottom');
-  pip.style.removeProperty('left'); pip.style.removeProperty('right');
-  if(p==='tl'){pip.style.top=pad+'px';pip.style.left=pad+'px';}
-  else if(p==='tr'){pip.style.top=pad+'px';pip.style.right=pad+'px';}
-  else if(p==='bl'){pip.style.bottom=pad+'px';pip.style.left=pad+'px';}
-  else{pip.style.bottom=pad+'px';pip.style.right=pad+'px';}
-}
-function sizePip(s){ const m={s:[160,90],m:[220,124],l:[300,169]}; const[w,h]=m[s]; pip.style.width=w+'px'; pip.style.height=h+'px'; }
-
-/* ses toggle */
-function toggleAudio(){
-  S.audioOn=!S.audioOn;
-  $('b-audio').classList.toggle('on',S.audioOn);
-  if(S.stream){
-    S.stream.getAudioTracks().forEach(t=>{ t.enabled=S.audioOn; });
-  }
-  showToast(S.audioOn?'🎤 Ses açık':'🔇 Sessiz kayıt');
-}
-
-/* kamera çevirme */
-async function flipCam(){
-  if(!S.camOn) return;
-  S.facingMode = S.facingMode==='user'?'environment':'user';
-  const wasRec=S.recOn;
-  if(wasRec) stopRec();
-  S.stream.getTracks().forEach(t=>t.stop());
-  try{
-    const s=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:S.facingMode,width:{ideal:1280},height:{ideal:720}},
-      audio:S.audioOn
-    });
-    S.stream=s; camv.srcObject=s;
-    showToast(S.facingMode==='user'?'📷 Ön kamera':'📷 Arka kamera');
-  }catch(e){ showToast('Kamera değiştirilemedi'); }
-}
-
-/* ════════════════════════════
-   RECORDING
-════════════════════════════ */
-function toggleRec(){ S.recOn?stopRec():startRec(); }
-async function startRec(){
-  if(!S.stream) return;
-  S.chunks=[]; S.blob=null;
-  $('dl-btn').style.display='none'; $('dl-btn').classList.remove('ok');
-  const mimes=['video/webm;codecs=vp9','video/webm','video/mp4'];
-  let mime=mimes.find(m=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m))||'';
-  try{
-    const mr=new MediaRecorder(S.stream,mime?{mimeType:mime}:{});
-    mr.ondataavailable=e=>{ if(e.data.size>0) S.chunks.push(e.data); };
-    mr.onstop=()=>{
-      S.blob=new Blob(S.chunks,{type:mime||'video/webm'});
-      $('dl-btn').style.display='flex'; $('dl-btn').classList.add('ok');
-      const dlm=$('dl-btn-m'); if(dlm) dlm.style.display='flex';
-      dlRec(); // otomatik indir
+    const els = {
+      body: document.body,
+      stage: $('#stage'),
+      viewport: $('#viewport'),
+      track: $('#track'),
+      script: $('#script'),
+      blurTop: $('#blurTop'),
+      blurBot: $('#blurBot'),
+      rlTop: $('#rlTop'),
+      rlBot: $('#rlBot'),
+      vignette: $('#vignetteEl'),
+      countdown: $('#countdown'),
+      cdNum: $('#cdNum'),
+      pip: $('#pip'),
+      pipVideo: $('#pipVideo'),
+      pipPh: $('#pipPh'),
+      taD: $('#textarea-desktop'),
+      taM: $('#textarea-mobile'),
+      statsD: $('#stats-desktop'),
+      statsM: $('#stats-mobile'),
+      estD: $('#est-desktop'),
+      btnPlay: $('#btn-play'),
+      btnReset: $('#btn-reset'),
+      progBar: $('#progBar'),
+      progFill: $('#progFill'),
+      elapsed: $('#elapsed'),
+      statusDot: $('#statusDot'),
+      speed: $('#speed'),
+      speedVal: $('#speedVal'),
+      wpmEst: $('#wpmEst'),
+      sheetBackdrop: $('#sheetBackdrop'),
+      sheets: { editor: $('#sheet-editor'), settings: $('#sheet-settings'), cam: $('#sheet-cam') },
+      settingsRoot: $('#settings-root'),
+      settingsMobile: $('#settings-mobile'),
+      camMobile: $('#cam-mobile-body'),
+      mobileBar: $('#mobileBar'),
+      panelEditor: $('#panel-editor'),
+      panelSettings: $('#panel-settings'),
+      tabEditor: $('#tab-editor'),
+      tabPrompter: $('#tab-prompter'),
+      btnCamTop: $('#btn-cam-top'),
+      btnRecTop: $('#btn-rec-top'),
+      btnFs: $('#btn-fs'),
     };
-    mr.start(200); S.mr=mr;
-  }catch(e){ alert('Kayıt başlatılamadı: '+e.message); return; }
-  S.recOn=true; S.recTs=Date.now();
-  $('rec-btn').classList.add('rec'); $('rec-lbl').textContent='Durdur';
-  $('rec-icon').innerHTML='<rect x="3" y="3" width="10" height="10" rx="1"/>';
-  cInd.classList.add('rec'); recBadge.style.display='inline-flex'; rdot.classList.add('on');
-  const mn=$('mn-cam'); if(mn) mn.classList.add('rd');
-  S.recIv=setInterval(updRecT,1000);
-  syncCamUI(true,true);
-}
-function stopRec(){
-  if(S.mr&&S.mr.state!=='inactive') S.mr.stop();
-  S.recOn=false; clearInterval(S.recIv);
-  $('rec-btn').classList.remove('rec'); $('rec-lbl').textContent='Kayıt';
-  $('rec-icon').innerHTML='<circle cx="8" cy="8" r="5.5"/>';
-  cInd.classList.remove('rec'); cInd.classList.add('on');
-  recBadge.style.display='none'; rdot.classList.remove('on'); rtm.textContent='00:00';
-  const mn=$('mn-cam'); if(mn) mn.classList.remove('rd');
-  syncCamUI(true,false);
-  // onstop → otomatik indir + mobil indirme butonu göster
-}
-function updRecT(){
-  const s=Math.floor((Date.now()-S.recTs)/1000);
-  const t=(Math.floor(s/60)+'').padStart(2,'0')+':'+(s%60+'').padStart(2,'0');
-  recT.textContent=t; rtm.textContent=t;
-  const tm=$('rec-t-m'); if(tm) tm.textContent=t;
-}
-function dlRec(){
-  if(!S.blob) return;
-  const u=URL.createObjectURL(S.blob);
-  const a=document.createElement('a');
-  a.href=u; a.download='prompter-kayit-'+new Date().toISOString().slice(0,19).replace(/[T:]/g,'-')+'.webm';
-  a.click(); setTimeout(()=>URL.revokeObjectURL(u),5000);
-}
 
-/* ════════════════════════════
-   DRAGGABLE PiP
-════════════════════════════ */
-function makeDraggable(el){
-  let ox,oy,sx,sy,drag=false;
-  const start=(cx,cy)=>{
-    drag=true; ox=cx; oy=cy;
-    const r=el.getBoundingClientRect(); sx=r.left; sy=r.top;
-  };
-  const move=(cx,cy)=>{
-    if(!drag) return;
-    el.style.left=(sx+cx-ox)+'px'; el.style.top=(sy+cy-oy)+'px';
-    el.style.right='auto'; el.style.bottom='auto';
-  };
-  const end=()=>{ drag=false; };
-  el.addEventListener('mousedown',e=>{ if(e.target.tagName==='BUTTON') return; e.preventDefault(); start(e.clientX,e.clientY); });
-  document.addEventListener('mousemove',e=>move(e.clientX,e.clientY));
-  document.addEventListener('mouseup',end);
-  el.addEventListener('touchstart',e=>{ if(e.target.tagName==='BUTTON') return; const t=e.touches[0]; start(t.clientX,t.clientY); },{passive:true});
-  document.addEventListener('touchmove',e=>{ const t=e.touches[0]; move(t.clientX,t.clientY); },{passive:true});
-  document.addEventListener('touchend',end);
-}
+    function toast(msg) {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toast._tm);
+      toast._tm = setTimeout(() => t.classList.remove('show'), 2200);
+    }
 
-/* ════════════════════════════
-   MOBILE DRAWER SYSTEM
-════════════════════════════ */
-function openDr(id){
-  closeDr();
-  const dr=$('dr-'+id), back=$('m-back');
-  if(!dr) return;
-  S._dr=id;
-  dr.classList.add('on'); back.classList.add('on');
-  document.body.style.overflow='hidden';
-  if(id==='ed'){
-    $('ta-m').value=$('ta').value;
-    setTimeout(()=>$('ta-m').focus(),350);
-  }
-  // Swipe down to close
-  let sy=0,dragging=false;
-  dr.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;dragging=true;},{passive:true,once:true});
-  dr.addEventListener('touchmove',e=>{
-    if(!dragging) return;
-    const dy=e.touches[0].clientY-sy;
-    if(dy>60){dragging=false;closeDr();}
-  },{passive:true,once:true});
-}
-function closeDr(){
-  if(!S._dr) return;
-  const dr=$('dr-'+S._dr); if(dr) dr.classList.remove('on');
-  $('m-back').classList.remove('on');
-  document.body.style.overflow='';
-  S._dr=null;
-}
+    function fmtTime(sec) {
+      const s = Math.max(0, Math.floor(sec));
+      return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }
 
-/* ════════════════════════════
-   BUILD SETTINGS DRAWER (mobile)
-════════════════════════════ */
-function buildSettingsDr(){
-  const body=$('dr-set-body'); if(!body) return;
-  body.innerHTML=`
-<div class="cs">
-  <div class="cs-t">Hız & Oynatma</div>
-  <div class="cr"><span class="cl">Hız</span><div class="sw"><input type="range" id="spd-m" min="0" max="100" value="30" style="flex:1"><span class="sv" id="spd-m-v">30</span></div></div>
-  <div class="cr"><span class="cl">Geri Sayım</span><button class="ib on" id="b-cd-m" onclick="toggleCd()"><svg viewBox="0 0 14 14"><circle cx="7" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 5.5V8l1.8 1.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg></button></div>
-  <div class="cr"><span class="cl">Oto-Tekrar</span><button class="ib" id="b-lp-m" onclick="toggleLoop()"><svg viewBox="0 0 14 14"><path d="M2 5h8.5M10 3l2.5 2L10 7M12 9H3.5M4 11l-2.5-2L4 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg></button></div>
-</div>
-<div class="cs">
-  <div class="cs-t">Yazı Tipi</div>
-  <div class="cr"><span class="cl">Boyut</span><div class="sw"><input type="range" id="fs-m" min="14" max="80" value="26" step="2" style="flex:1"><span class="sv" id="fs-m-v">26px</span></div></div>
-  <div class="cr"><span class="cl">Satır Aralığı</span><div class="sw"><input type="range" id="lh-m" min="1.0" max="2.8" value="1.55" step="0.05" style="flex:1"><span class="sv" id="lh-m-v">1.55</span></div></div>
-  <div class="cr"><span class="cl">Kalın</span><button class="ib" id="b-bold-m" onclick="toggleBoldM()"><svg viewBox="0 0 14 14"><text x="2" y="11" font-family="serif" font-weight="700" font-size="12" fill="currentColor">B</text></svg></button></div>
-  <div class="cr"><span class="cl">İtalik</span><button class="ib" id="b-ital-m" onclick="toggleItalM()"><svg viewBox="0 0 14 14"><text x="3" y="11" font-family="serif" font-style="italic" font-size="12" fill="currentColor">I</text></svg></button></div>
-</div>
-<div class="cs">
-  <div class="cs-t">Odak & Bulanıklık</div>
-  <div class="cr"><span class="cl">Odak Çizgisi</span><button class="ib on" id="b-foc-m" onclick="toggleFoc()"><svg viewBox="0 0 14 14"><rect x="1" y="6" width="12" height="2" rx="1"/></svg></button></div>
-  <div class="cr"><span class="cl">Konum</span>
-    <div class="tg">
-      <button class="tp" id="fp-top-m" onclick="setFocPos('top')">Üst</button>
-      <button class="tp on" id="fp-mid-m" onclick="setFocPos('mid')">Orta</button>
-      <button class="tp" id="fp-bot-m" onclick="setFocPos('bot')">Alt</button>
-    </div>
-  </div>
-  <div class="cr"><span class="cl">Bulanıklık</span><div class="sw"><input type="range" id="bl-m" min="0" max="16" value="5" step="0.5" style="flex:1"><span class="sv" id="bl-m-v">5px</span></div></div>
-</div>
-<div class="cs">
-  <div class="cs-t">Ayna Modu</div>
-  <div class="mp-wrap">
-    <button class="mp-btn on" id="mp-off-m" onclick="setMirror('off')">Kapalı</button>
-    <button class="mp-btn" id="mp-h-m" onclick="setMirror('h')">Yatay</button>
-    <button class="mp-btn" id="mp-v-m" onclick="setMirror('v')">Dikey</button>
-    <button class="mp-btn" id="mp-hv-m" onclick="setMirror('hv')">İkisi de</button>
-  </div>
-</div>
-<div class="cs">
-  <div class="cs-t">📹 Kamera & Kayıt</div>
-  <div class="cam-row" id="cam-row-m">
-    <div class="c-ind" id="c-ind-m"></div>
-    <div class="c-info" id="c-info-m">Kamera kapalı</div>
-    <span class="rec-badge" id="rec-badge-m" style="display:none">● <span id="rec-t-m">00:00</span></span>
-  </div>
-  <div style="display:flex;gap:8px;margin-bottom:8px">
-    <button id="cam-tog-m" onclick="toggleCam()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border-radius:var(--r1);border:1px solid var(--b1);background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;transition:var(--tr)">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1 4.5A1.5 1.5 0 012.5 3h8A1.5 1.5 0 0112 4.5v.382l2.553-1.276A.5.5 0 0115 4v8a.5.5 0 01-.447.894L12 11.618V12a1.5 1.5 0 01-1.5 1.5h-8A1.5 1.5 0 011 12V4.5z"/></svg>
-      <span id="cam-tog-m-lbl">Kamerayı Aç</span>
-    </button>
-    <button id="rec-tog-m" onclick="toggleRec()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border-radius:var(--r1);border:1px solid var(--b1);background:transparent;color:var(--t2);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;transition:var(--tr)">
-      <svg id="rec-tog-m-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="5.5"/></svg>
-      <span id="rec-tog-m-lbl">Kayıt Başlat</span>
-    </button>
-  </div>
-  <div style="font-size:10px;color:var(--t3);margin-bottom:6px;line-height:1.5">Kamera konumu:</div>
-  <div class="tg" style="margin-bottom:8px">
-    <button class="tp" id="cp-tl-m" onclick="movePip('tl')">↖ Sol Üst</button>
-    <button class="tp" id="cp-tr-m" onclick="movePip('tr')">↗ Sağ Üst</button>
-    <button class="tp" id="cp-bl-m" onclick="movePip('bl')">↙ Sol Alt</button>
-    <button class="tp on" id="cp-br-m" onclick="movePip('br')">↘ Sağ Alt</button>
-  </div>
-  <div class="cr"><span class="cl">PiP Opaklığı</span><div class="sw"><input type="range" id="pip-op-m" min="20" max="100" value="90" style="flex:1"><span class="sv" id="pip-op-m-v">90%</span></div></div>
-  <button class="dl-btn ok" id="dl-btn-m" style="display:none;margin-top:6px" onclick="dlRec()">
-    <svg viewBox="0 0 14 14"><path d="M7 1v8M4 7l3 3 3-3M1 11h12v2H1z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
-    Kaydı Tekrar İndir
-  </button>
-</div>
-<div class="cs">
-  <div class="cs-t">Renk Teması</div>
-  <div class="tdots">
-    <div class="tdot on" data-t="def" onclick="setTheme('def',this)"></div>
-    <div class="tdot" data-t="amber" onclick="setTheme('amber',this)"></div>
-    <div class="tdot" data-t="hc" onclick="setTheme('hc',this)"></div>
-    <div class="tdot" data-t="light" onclick="setTheme('light',this)"></div>
-    <div class="tdot" data-t="green" onclick="setTheme('green',this)"></div>
-    <div class="tdot" data-t="blue" onclick="setTheme('blue',this)"></div>
-  </div>
-</div>
-<div class="cs">
-  <div class="cs-t">Süre Tahmini</div>
-  <div class="tcard"><div class="trow">
-    <div class="ti"><div class="tv" id="est-t-m">0:00</div><div class="tl">Tahmini Süre</div></div>
-    <div class="ti"><div class="tv" id="wc-m">0</div><div class="tl">Kelime</div></div>
-  </div></div>
-</div>`;
+    function wpmFromSpeed(spd) {
+      if (spd <= 0) return 0;
+      return Math.round(70 + (spd / 100) * 150);
+    }
 
-  // Bind mobile sliders
-  const bindM=(id,vid,fn)=>{
-    const e=$(id); if(!e) return;
-    e.addEventListener('input',()=>{
-      const v=parseFloat(e.value);
-      $(vid).textContent=fn.fmt(v);
-      fn.apply(v);
-    });
-  };
-  bindM('spd-m','spd-m-v',{fmt:v=>Math.round(v),apply:v=>{S.spd=Math.round(v);$('spd-sl').value=S.spd;$('spd-v').textContent=S.spd;calcTime();}});
-  bindM('fs-m','fs-m-v',{fmt:v=>v+'px',apply:v=>{pt.style.fontSize=v+'px';$('sl-fs').value=v;$('v-fs').textContent=v+'px';updateScrollMax();}});
-  bindM('lh-m','lh-m-v',{fmt:v=>v.toFixed(2),apply:v=>{pt.style.lineHeight=v;$('sl-lh').value=v;$('v-lh').textContent=v.toFixed(2);updateScrollMax();}});
-  bindM('bl-m','bl-m-v',{fmt:v=>v+'px',apply:v=>{setBlur(v);$('sl-bl').value=v;$('v-bl').textContent=v+'px';}});
-  bindM('pip-op-m','pip-op-m-v',{fmt:v=>Math.round(v)+'%',apply:v=>{ pip.style.opacity=v/100; }});
-}
+    function updateMax() {
+      state.max = Math.max(0, els.track.scrollHeight - els.viewport.clientHeight);
+      updateProgress();
+    }
 
-function toggleBoldM(){ S.bold=!S.bold; $('b-bold').classList.toggle('on',S.bold); $('b-bold-m').classList.toggle('on',S.bold); pt.style.fontWeight=S.bold?'700':'400'; }
-function toggleItalM(){ S.ital=!S.ital; $('b-ital').classList.toggle('on',S.ital); $('b-ital-m').classList.toggle('on',S.ital); pt.style.fontStyle=S.ital?'italic':'normal'; }
+    function applyTransform() {
+      const y = -state.pos;
+      els.track.style.transform = 'translate3d(0,' + y + 'px,0)';
+    }
 
-init();
-</script>
+    function setPos(p, syncUi) {
+      state.pos = Math.max(0, Math.min(state.max, p));
+      applyTransform();
+      if (syncUi !== false) updateProgress();
+    }
+
+    function updateProgress() {
+      const pct = state.max > 0 ? (state.pos / state.max) * 100 : 0;
+      els.progFill.style.width = Math.min(100, pct) + '%';
+      els.progBar.setAttribute('aria-valuenow', String(Math.round(pct)));
+      els.elapsed.textContent = fmtTime(state.elapsedMs / 1000);
+    }
+
+    function setPlayUi(playing) {
+      const path = playing
+        ? 'M7 5h4v14H7V5zm6 0h4v14h-4V5z'
+        : 'M8 5v14l11-7z';
+      els.btnPlay.querySelector('path').setAttribute('d', path);
+      els.btnPlay.setAttribute('aria-pressed', String(playing));
+      els.stage.classList.toggle('playing', playing);
+      els.statusDot.className = 'status-dot' + (playing ? ' running' : state.pos > 2 ? ' paused-at' : '');
+    }
+
+    function syncText() {
+      const v = els.taD.value;
+      els.script.textContent = v;
+      const words = v.trim() ? v.trim().split(/\s+/).length : 0;
+      const stat = words + ' kl · ' + v.length + ' kr';
+      els.statsD.textContent = stat;
+      els.statsM.textContent = stat;
+      const wpm = wpmFromSpeed(state.speed);
+      const estSec = wpm > 0 ? Math.round((words / wpm) * 60) : 0;
+      const est = fmtTime(estSec);
+      els.estD.textContent = est;
+      scheduleSave();
+      requestAnimationFrame(updateMax);
+    }
+
+    function bindTextareas() {
+      els.taD.addEventListener('input', () => {
+        els.taM.value = els.taD.value;
+        syncText();
+      });
+      els.taM.addEventListener('input', () => {
+        els.taD.value = els.taM.value;
+        syncText();
+      });
+    }
+
+    function pause() {
+      state.playing = false;
+      if (state.loopRaf) cancelAnimationFrame(state.loopRaf);
+      state.loopRaf = null;
+      state.lastTs = 0;
+      setPlayUi(false);
+    }
+
+    function tick(ts) {
+      if (!state.playing) return;
+      if (!state.lastTs) state.lastTs = ts;
+      let dt = ts - state.lastTs;
+      state.lastTs = ts;
+      if (dt > 64) dt = 64;
+      if (document.hidden) {
+        state.loopRaf = requestAnimationFrame(tick);
+        return;
+      }
+      state.elapsedMs += dt;
+      const fs = parseFloat(getComputedStyle(els.script).fontSize) || 24;
+      const pxPerSec = (state.speed / 100) * fs * 2.65;
+      const delta = (pxPerSec * dt) / 1000;
+      if (state.speed <= 0) {
+        state.loopRaf = requestAnimationFrame(tick);
+        updateProgress();
+        return;
+      }
+      let next = state.pos + delta;
+      if (next >= state.max) {
+        next = state.max;
+        state.pos = next;
+        applyTransform();
+        updateProgress();
+        if (state.loop) {
+          state.pos = 0;
+          applyTransform();
+          state.lastTs = 0;
+        } else {
+          pause();
+          toast('Metin sona erdi');
+          return;
+        }
+      } else {
+        state.pos = next;
+        applyTransform();
+        updateProgress();
+      }
+      state.loopRaf = requestAnimationFrame(tick);
+    }
+
+    function startScroll() {
+      if (state.speed <= 0) {
+        toast('Hız 0 — kaydırma başlamaz');
+        return;
+      }
+      updateMax();
+      state.playing = true;
+      state.lastTs = 0;
+      setPlayUi(true);
+      state.loopRaf = requestAnimationFrame(tick);
+    }
+
+    function runCountdown() {
+      if (prefersReduceMotion()) {
+        startScroll();
+        return;
+      }
+      state.countdown = true;
+      els.countdown.classList.add('on');
+      let n = 3;
+      els.cdNum.textContent = String(n);
+      const step = () => {
+        n--;
+        if (n <= 0) {
+          els.countdown.classList.remove('on');
+          state.countdown = false;
+          startScroll();
+        } else {
+          els.cdNum.textContent = String(n);
+          setTimeout(step, 900);
+        }
+      };
+      setTimeout(step, 900);
+    }
+
+    function togglePlay() {
+      if (state.countdown) return;
+      if (state.playing) {
+        pause();
+        return;
+      }
+      if (state.countdownEnabled && state.pos < 1) runCountdown();
+      else startScroll();
+    }
+
+    function resetPlay() {
+      pause();
+      if (state.countdown) {
+        state.countdown = false;
+        els.countdown.classList.remove('on');
+      }
+      state.pos = 0;
+      state.elapsedMs = 0;
+      applyTransform();
+      updateProgress();
+    }
+
+    function seekClientX(clientX) {
+      const r = els.progBar.getBoundingClientRect();
+      const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+      setPos(t * state.max);
+    }
+
+    function buildSettings(html) {
+      els.settingsRoot.innerHTML = html;
+      els.settingsMobile.innerHTML = html;
+    }
+
+    function initSettingsUi() {
+      const html = `
+        <div class="field">
+          <label>Oynatma</label>
+          <div class="row" style="margin-bottom:8px">
+            <span class="meta">Geri sayım</span>
+            <button type="button" class="chip" data-action="toggle-cd" aria-pressed="true">Açık</button>
+          </div>
+          <div class="row">
+            <span class="meta">Döngü</span>
+            <button type="button" class="chip" data-action="toggle-loop" aria-pressed="false">Kapalı</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Tipografi</label>
+          <div class="row" style="margin-bottom:8px"><span>Yazı boyutu</span>
+            <div class="range-wrap"><input type="range" data-k="font" min="0.65" max="1.65" step="0.02" value="1" /></div>
+            <span class="val" data-v="font">100%</span>
+          </div>
+          <div class="row"><span>Satır aralığı</span>
+            <div class="range-wrap"><input type="range" data-k="lh" min="1.1" max="2.4" step="0.02" value="1.52" /></div>
+            <span class="val" data-v="lh">1.52</span>
+          </div>
+          <div class="field" style="margin-top:10px"><span class="meta">Hiza</span>
+            <div class="chip-group" style="margin-top:8px">
+              <button type="button" class="chip on" data-align="left">Sol</button>
+              <button type="button" class="chip" data-align="center">Orta</button>
+              <button type="button" class="chip" data-align="right">Sağ</button>
+            </div>
+          </div>
+          <label style="margin-top:10px;display:block;font-size:.72rem;font-weight:700;letter-spacing:.08em;color:var(--muted)">Yazı tipi</label>
+          <select data-k="face" style="margin-top:6px">
+            <option value="fr">Fraunces (okuma)</option>
+            <option value="dm">DM Sans</option>
+            <option value="mono">JetBrains Mono</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Okuma çizgisi</label>
+          <div class="chip-group">
+            <button type="button" class="chip" data-band="top">Üst</button>
+            <button type="button" class="chip on" data-band="mid">Orta</button>
+            <button type="button" class="chip" data-band="bot">Alt</button>
+          </div>
+          <div class="row" style="margin-top:10px"><span>Kenar bulanıklığı</span>
+            <div class="range-wrap"><input type="range" data-k="blur" min="0" max="18" step="0.5" value="8" /></div>
+            <span class="val" data-v="blur">8px</span>
+          </div>
+          <div class="row"><span>Vinyet</span>
+            <div class="range-wrap"><input type="range" data-k="vig" min="0" max="100" value="88" /></div>
+            <span class="val" data-v="vig">88%</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Ayna</label>
+          <div class="chip-group">
+            <button type="button" class="chip on" data-mirror="off">Kapalı</button>
+            <button type="button" class="chip" data-mirror="h">Yatay</button>
+            <button type="button" class="chip" data-mirror="v">Dikey</button>
+            <button type="button" class="chip" data-mirror="hv">Çapraz</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Tema</label>
+          <div class="theme-dots" role="radiogroup" aria-label="Renk teması">
+            <button type="button" class="theme-dot td-def" data-theme="def" aria-checked="true" title="Varsayılan"></button>
+            <button type="button" class="theme-dot td-amber" data-theme="amber" aria-checked="false" title="Amber"></button>
+            <button type="button" class="theme-dot td-studio" data-theme="studio" aria-checked="false" title="Yüksek kontrast"></button>
+            <button type="button" class="theme-dot td-light" data-theme="light" aria-checked="false" title="Açık"></button>
+            <button type="button" class="theme-dot td-green" data-theme="green" aria-checked="false" title="Yeşil"></button>
+            <button type="button" class="theme-dot td-blue" data-theme="blue" aria-checked="false" title="Mavi"></button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Süre</label>
+          <div class="meta js-est">0:00 tahmini</div>
+        </div>
+        <div class="field">
+          <label>Kısayollar</label>
+          <div class="meta" style="line-height:1.6">Boşluk: oynat · Ok ↑↓: hız · R: sıfırla · F: tam ekran · C: kamera</div>
+        </div>`;
+      buildSettings(html);
+      wireSettingsPanels(els.settingsRoot);
+      wireSettingsPanels(els.settingsMobile);
+    }
+
+    function wireSettingsPanels(root) {
+      root.querySelector('[data-action="toggle-cd"]').addEventListener('click', (e) => {
+        state.countdownEnabled = !state.countdownEnabled;
+        e.currentTarget.setAttribute('aria-pressed', String(state.countdownEnabled));
+        e.currentTarget.textContent = state.countdownEnabled ? 'Açık' : 'Kapalı';
+        mirrorChip(root, e.currentTarget);
+        scheduleSave();
+      });
+      root.querySelector('[data-action="toggle-loop"]').addEventListener('click', (e) => {
+        state.loop = !state.loop;
+        e.currentTarget.setAttribute('aria-pressed', String(state.loop));
+        e.currentTarget.textContent = state.loop ? 'Açık' : 'Kapalı';
+        e.currentTarget.classList.toggle('on', state.loop);
+        mirrorChip(root, e.currentTarget);
+        scheduleSave();
+      });
+
+      const fontR = root.querySelector('[data-k="font"]');
+      const lhR = root.querySelector('[data-k="lh"]');
+      const blurR = root.querySelector('[data-k="blur"]');
+      const vigR = root.querySelector('[data-k="vig"]');
+      const face = root.querySelector('[data-k="face"]');
+
+      const bindRange = (input, fmt, apply) => {
+        input.addEventListener('input', () => {
+          const v = parseFloat(input.value);
+          root.querySelector('[data-v="' + input.dataset.k + '"]').textContent = fmt(v);
+          apply(v);
+          syncParallelRange(input);
+          scheduleSave();
+        });
+      };
+
+      bindRange(fontR, (v) => Math.round(v * 100) + '%', (v) => {
+        state.fontScale = v;
+        document.documentElement.style.setProperty('--fz', 'calc(' + v + ' * clamp(22px, 2.35vw + 14px, 52px))');
+        updateMax();
+      });
+      bindRange(lhR, (v) => v.toFixed(2), (v) => {
+        state.lineHeight = v;
+        els.script.style.lineHeight = String(v);
+        updateMax();
+      });
+      bindRange(blurR, (v) => v + 'px', (v) => {
+        state.blurPx = v;
+        document.documentElement.style.setProperty('--blur', v + 'px');
+      });
+      bindRange(vigR, (v) => Math.round(v) + '%', (v) => {
+        state.vignette = v / 100;
+        els.vignette.style.opacity = String(v / 100);
+      });
+
+      face.addEventListener('change', () => {
+        const map = { fr: '"Fraunces",Georgia,serif', dm: '"DM Sans",system-ui,sans-serif', mono: '"JetBrains Mono",monospace' };
+        els.script.style.fontFamily = map[face.value] || map.fr;
+        syncParallelSelect(face);
+        scheduleSave();
+      });
+
+      root.querySelectorAll('[data-align]').forEach((b) => {
+        b.addEventListener('click', () => {
+          root.querySelectorAll('[data-align]').forEach((x) => x.classList.remove('on'));
+          b.classList.add('on');
+          els.script.style.textAlign = b.dataset.align;
+          mirrorAlign(root, b.dataset.align);
+          scheduleSave();
+        });
+      });
+
+      root.querySelectorAll('[data-band]').forEach((b) => {
+        b.addEventListener('click', () => {
+          setBand(b.dataset.band, root);
+          scheduleSave();
+        });
+      });
+
+      root.querySelectorAll('[data-mirror]').forEach((b) => {
+        b.addEventListener('click', () => setMirror(b.dataset.mirror, root));
+      });
+
+      root.querySelectorAll('[data-theme]').forEach((b) => {
+        b.addEventListener('click', () => setTheme(b.dataset.theme, root));
+      });
+    }
+
+    function mirrorChip(root, el) {
+      const action = el.getAttribute('data-action');
+      const panels = [els.settingsRoot, els.settingsMobile];
+      panels.forEach((p) => {
+        if (p === root) return;
+        const o = p.querySelector('[data-action="' + action + '"]');
+        if (!o) return;
+        o.setAttribute('aria-pressed', el.getAttribute('aria-pressed'));
+        o.textContent = el.textContent;
+        o.classList.toggle('on', el.classList.contains('on'));
+      });
+    }
+
+    function mirrorAlign(root, al) {
+      [els.settingsRoot, els.settingsMobile].forEach((p) => {
+        if (p === root) return;
+        p.querySelectorAll('[data-align]').forEach((x) => x.classList.toggle('on', x.dataset.align === al));
+      });
+    }
+
+    function syncParallelRange(input) {
+      const k = input.dataset.k;
+      const v = input.value;
+      [els.settingsRoot, els.settingsMobile].forEach((p) => {
+        const o = p.querySelector('[data-k="' + k + '"]');
+        if (o && o !== input) {
+          o.value = v;
+          const lab = p.querySelector('[data-v="' + k + '"]');
+          if (lab) {
+            if (k === 'font') lab.textContent = Math.round(parseFloat(v) * 100) + '%';
+            else if (k === 'lh') lab.textContent = parseFloat(v).toFixed(2);
+            else if (k === 'blur') lab.textContent = parseFloat(v) + 'px';
+            else if (k === 'vig') lab.textContent = Math.round(parseFloat(v)) + '%';
+          }
+        }
+      });
+    }
+
+    function syncParallelSelect(sel) {
+      const v = sel.value;
+      [els.settingsRoot, els.settingsMobile].forEach((p) => {
+        const o = p.querySelector('[data-k="face"]');
+        if (o && o !== sel) o.value = v;
+      });
+    }
+
+    function setBand(pos, root) {
+      state.bandPos = pos;
+      const map = { top: [0.35, 2.2], mid: [1, 1], bot: [2.2, 0.35] };
+      const g = map[pos] || map.mid;
+      els.rlTop.style.flexGrow = String(g[0]);
+      els.rlBot.style.flexGrow = String(g[1]);
+      [els.settingsRoot, els.settingsMobile].forEach((p) => {
+        p.querySelectorAll('[data-band]').forEach((b) => b.classList.toggle('on', b.dataset.band === pos));
+      });
+    }
+
+    function setMirror(m, root) {
+      state.mirror = m;
+      els.stage.classList.remove('mirror-h', 'mirror-v', 'mirror-hv');
+      if (m === 'h') els.stage.classList.add('mirror-h');
+      else if (m === 'v') els.stage.classList.add('mirror-v');
+      else if (m === 'hv') els.stage.classList.add('mirror-hv');
+      [els.settingsRoot, els.settingsMobile].forEach((p) => {
+        p.querySelectorAll('[data-mirror]').forEach((b) => b.classList.toggle('on', b.dataset.mirror === m));
+      });
+      scheduleSave();
+    }
+
+    function setTheme(t, root) {
+      state.theme = t;
+      els.body.className = els.body.className.replace(/\btheme-\w+/g, '').trim();
+      if (t !== 'def') els.body.classList.add('theme-' + (t === 'studio' ? 'studio' : t === 'light' ? 'light' : t));
+      [els.settingsRoot, els.settingsMobile].forEach((p) => {
+        p.querySelectorAll('[data-theme]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.theme === t)));
+      });
+      scheduleSave();
+    }
+
+    function updateWpmLabel() {
+      const w = wpmFromSpeed(state.speed);
+      els.speedVal.textContent = String(Math.round(state.speed));
+      els.wpmEst.textContent = w ? '~' + w + ' wpm' : '—';
+      $$('.js-est').forEach((estEl) => {
+        const words = els.taD.value.trim() ? els.taD.value.trim().split(/\s+/).length : 0;
+        const sec = w > 0 ? Math.round((words / w) * 60) : 0;
+        estEl.textContent = fmtTime(sec) + ' tahmini';
+      });
+    }
+
+    function openSheet(name) {
+      const sh = els.sheets[name];
+      if (!sh) return;
+      els.sheetBackdrop.hidden = false;
+      requestAnimationFrame(() => els.sheetBackdrop.classList.add('open'));
+      sh.classList.add('open');
+      sh.setAttribute('aria-hidden', 'false');
+      $$('.mobile-bar button').forEach((b) => b.setAttribute('data-active', String(b.dataset.sheet === name)));
+    }
+
+    function closeSheets() {
+      els.sheetBackdrop.classList.remove('open');
+      setTimeout(() => { els.sheetBackdrop.hidden = true; }, 220);
+      Object.values(els.sheets).forEach((sh) => {
+        sh.classList.remove('open');
+        sh.setAttribute('aria-hidden', 'true');
+      });
+      $$('.mobile-bar button').forEach((b) => b.removeAttribute('data-active'));
+    }
+
+    function applyTab(mode) {
+      const ed = mode === 'editor';
+      els.tabEditor.setAttribute('aria-selected', String(ed));
+      els.tabPrompter.setAttribute('aria-selected', String(!ed));
+      if (window.matchMedia('(max-width:820px)').matches) {
+        if (ed) openSheet('editor');
+        else closeSheets();
+      } else {
+        els.panelEditor.hidden = !ed;
+        els.panelSettings.hidden = false;
+      }
+      requestAnimationFrame(updateMax);
+    }
+
+    async function toggleCam() {
+      if (state.camOn) return stopCam();
+      els.pip.hidden = false;
+      els.pipPh.style.display = 'flex';
+      els.pipVideo.style.display = 'none';
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: state.audioOn,
+        });
+        state.stream = s;
+        state.camOn = true;
+        els.pipVideo.srcObject = s;
+        await els.pipVideo.play().catch(() => {});
+        els.pipPh.style.display = 'none';
+        els.pipVideo.style.display = 'block';
+        els.btnCamTop.setAttribute('aria-pressed', 'true');
+        els.btnRecTop.hidden = false;
+        placePip(state.pipCorner);
+        toast('Kamera hazır');
+      } catch (e) {
+        els.pip.hidden = true;
+        state.camOn = false;
+        toast('Kamera izni gerekli');
+      }
+      syncCamPanel();
+      scheduleSave();
+    }
+
+    function stopCam() {
+      if (state.recOn) stopRec();
+      if (state.stream) {
+        state.stream.getTracks().forEach((t) => t.stop());
+        state.stream = null;
+      }
+      els.pipVideo.srcObject = null;
+      state.camOn = false;
+      els.pip.hidden = true;
+      els.btnCamTop.setAttribute('aria-pressed', 'false');
+      els.btnRecTop.hidden = true;
+      syncCamPanel();
+      scheduleSave();
+    }
+
+    function buildCamPanel() {
+      const html = `
+        <button type="button" class="btn primary" style="width:100%;margin-bottom:8px" data-cam-toggle>Kamerayı ${state.camOn ? 'kapat' : 'aç'}</button>
+        <button type="button" class="btn danger-soft" style="width:100%;margin-bottom:12px;display:${state.camOn ? 'flex' : 'none'}" data-rec-toggle>${state.recOn ? 'Kaydı durdur' : 'Kayıt başlat'}</button>
+        <div class="field">
+          <label>PiP konumu</label>
+          <div class="chip-group">
+            ${['tl', 'tr', 'bl', 'br'].map((c) =>
+              `<button type="button" class="chip${state.pipCorner === c ? ' on' : ''}" data-pip="${c}">${c}</button>`
+            ).join('')}
+          </div>
+        </div>
+        <div class="field">
+          <label>Ön / arka kamera</label>
+          <button type="button" class="btn small" style="width:100%" data-flip>Çevir</button>
+        </div>
+        <div class="field">
+          <label>Ses (kayıtta)</label>
+          <button type="button" class="chip${state.audioOn ? ' on' : ''}" data-audio>${state.audioOn ? 'Açık' : 'Kapalı'}</button>
+        </div>`;
+      els.camMobile.innerHTML = html;
+      els.camMobile.querySelector('[data-cam-toggle]').addEventListener('click', () => toggleCam());
+      els.camMobile.querySelector('[data-rec-toggle]').addEventListener('click', () => toggleRec());
+      els.camMobile.querySelector('[data-flip]').addEventListener('click', () => flipCam());
+      els.camMobile.querySelector('[data-audio]').addEventListener('click', (e) => {
+        state.audioOn = !state.audioOn;
+        e.currentTarget.textContent = state.audioOn ? 'Açık' : 'Kapalı';
+        e.currentTarget.classList.toggle('on', state.audioOn);
+        if (state.stream) state.stream.getAudioTracks().forEach((t) => (t.enabled = state.audioOn));
+        scheduleSave();
+      });
+      els.camMobile.querySelectorAll('[data-pip]').forEach((b) => {
+        b.addEventListener('click', () => {
+          state.pipCorner = b.dataset.pip;
+          placePip(state.pipCorner);
+          buildCamPanel();
+          scheduleSave();
+        });
+      });
+    }
+
+    function syncCamPanel() {
+      buildCamPanel();
+    }
+
+    function placePip(corner) {
+      const pad = 12;
+      els.pip.style.top = els.pip.style.bottom = els.pip.style.left = els.pip.style.right = 'auto';
+      if (corner === 'tl') {
+        els.pip.style.top = pad + 'px';
+        els.pip.style.left = pad + 'px';
+      } else if (corner === 'tr') {
+        els.pip.style.top = pad + 'px';
+        els.pip.style.right = pad + 'px';
+      } else if (corner === 'bl') {
+        els.pip.style.bottom = pad + 'px';
+        els.pip.style.left = pad + 'px';
+      } else {
+        els.pip.style.bottom = pad + 'px';
+        els.pip.style.right = pad + 'px';
+      }
+    }
+
+    async function flipCam() {
+      if (!state.camOn) return;
+      state.facing = state.facing === 'user' ? 'environment' : 'user';
+      const wasRec = state.recOn;
+      if (wasRec) stopRec();
+      state.stream.getTracks().forEach((t) => t.stop());
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: state.audioOn,
+        });
+        state.stream = s;
+        els.pipVideo.srcObject = s;
+        await els.pipVideo.play().catch(() => {});
+        toast(state.facing === 'user' ? 'Ön kamera' : 'Arka kamera');
+      } catch (e) {
+        toast('Kamera değiştirilemedi');
+      }
+      scheduleSave();
+    }
+
+    function toggleRec() {
+      state.recOn ? stopRec() : startRec();
+    }
+
+    function startRec() {
+      if (!state.stream || !window.MediaRecorder) {
+        toast('Kayıt desteklenmiyor');
+        return;
+      }
+      state.chunks = [];
+      state.recordBlob = null;
+      const types = ['video/webm;codecs=vp9', 'video/webm', 'video/mp4'];
+      let mime = types.find((t) => MediaRecorder.isTypeSupported(t)) || '';
+      try {
+        state.recorder = new MediaRecorder(state.stream, mime ? { mimeType: mime } : undefined);
+      } catch (e) {
+        toast('Kayıt başlatılamadı');
+        return;
+      }
+      state.recorder.ondataavailable = (e) => {
+        if (e.data.size) state.chunks.push(e.data);
+      };
+      state.recorder.onstop = () => {
+        state.recordBlob = new Blob(state.chunks, { type: mime || 'video/webm' });
+        downloadBlob(state.recordBlob);
+        toast('Kayıt indirildi');
+      };
+      state.recorder.start(200);
+      state.recOn = true;
+      els.btnRecTop.setAttribute('aria-pressed', 'true');
+      syncCamPanel();
+    }
+
+    function stopRec() {
+      if (state.recorder && state.recorder.state !== 'inactive') state.recorder.stop();
+      state.recOn = false;
+      els.btnRecTop.setAttribute('aria-pressed', 'false');
+      syncCamPanel();
+    }
+
+    function downloadBlob(blob) {
+      const u = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = u;
+      a.download = 'flowprompter-' + new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-') + '.webm';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(u), 4000);
+    }
+
+    function goFullscreen() {
+      const el = document.documentElement;
+      const fs = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!fs) {
+        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (req) req.call(el);
+      } else {
+        const ex = document.exitFullscreen || document.webkitExitFullscreen;
+        if (ex) ex.call(document);
+      }
+    }
+
+    function scheduleSave() {
+      clearTimeout(state.saveTimer);
+      state.saveTimer = setTimeout(savePrefs, 350);
+    }
+
+    function savePrefs() {
+      try {
+        const dFace = els.settingsRoot.querySelector('[data-k="face"]');
+        const payload = {
+          text: els.taD.value,
+          speed: state.speed,
+          theme: state.theme,
+          mirror: state.mirror,
+          band: state.bandPos,
+          countdown: state.countdownEnabled,
+          loop: state.loop,
+          font: state.fontScale,
+          lh: state.lineHeight,
+          blur: state.blurPx,
+          vig: state.vignette,
+          align: els.script.style.textAlign || 'left',
+          face: dFace ? dFace.value : 'fr',
+          pip: state.pipCorner,
+          facing: state.facing,
+          audio: state.audioOn,
+        };
+        localStorage.setItem(LS_KEY, JSON.stringify(payload));
+      } catch (e) {}
+    }
+
+    function syncPlaybackToggles() {
+      [els.settingsRoot, els.settingsMobile].forEach((p) => {
+        const cd = p.querySelector('[data-action="toggle-cd"]');
+        if (cd) {
+          cd.setAttribute('aria-pressed', String(state.countdownEnabled));
+          cd.textContent = state.countdownEnabled ? 'Açık' : 'Kapalı';
+        }
+        const lp = p.querySelector('[data-action="toggle-loop"]');
+        if (lp) {
+          lp.setAttribute('aria-pressed', String(state.loop));
+          lp.textContent = state.loop ? 'Açık' : 'Kapalı';
+          lp.classList.toggle('on', state.loop);
+        }
+      });
+    }
+
+    function loadPrefs() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return;
+        const p = JSON.parse(raw);
+        if (p.text) {
+          els.taD.value = p.text;
+          els.taM.value = p.text;
+        }
+        if (p.speed != null) {
+          state.speed = +p.speed;
+          els.speed.value = String(state.speed);
+        }
+        if (p.theme) setTheme(p.theme, els.settingsRoot);
+        if (p.mirror) setMirror(p.mirror, els.settingsRoot);
+        if (p.band) setBand(p.band, els.settingsRoot);
+        if (typeof p.countdown === 'boolean') state.countdownEnabled = p.countdown;
+        if (typeof p.loop === 'boolean') state.loop = p.loop;
+        if (p.font != null) {
+          state.fontScale = +p.font;
+          const r = els.settingsRoot.querySelector('[data-k="font"]');
+          if (r) {
+            r.value = String(p.font);
+            document.documentElement.style.setProperty('--fz', 'calc(' + p.font + ' * clamp(22px, 2.35vw + 14px, 52px))');
+          }
+        }
+        if (p.lh != null) {
+          state.lineHeight = +p.lh;
+          els.script.style.lineHeight = String(p.lh);
+          const r = els.settingsRoot.querySelector('[data-k="lh"]');
+          if (r) r.value = String(p.lh);
+        }
+        if (p.blur != null) {
+          state.blurPx = +p.blur;
+          document.documentElement.style.setProperty('--blur', p.blur + 'px');
+          const r = els.settingsRoot.querySelector('[data-k="blur"]');
+          if (r) r.value = String(p.blur);
+        }
+        if (p.vig != null) {
+          const frac = p.vig > 1 ? p.vig / 100 : p.vig;
+          state.vignette = frac;
+          els.vignette.style.opacity = String(frac);
+          const r = els.settingsRoot.querySelector('[data-k="vig"]');
+          if (r) r.value = String(Math.round(frac * 100));
+        }
+        if (p.align) {
+          els.script.style.textAlign = p.align;
+          [els.settingsRoot, els.settingsMobile].forEach((root) => {
+            root.querySelectorAll('[data-align]').forEach((x) => x.classList.toggle('on', x.dataset.align === p.align));
+          });
+        }
+        if (p.face) {
+          const map = { fr: '"Fraunces",Georgia,serif', dm: '"DM Sans",system-ui,sans-serif', mono: '"JetBrains Mono",monospace' };
+          [els.settingsRoot, els.settingsMobile].forEach((root) => {
+            const s = root.querySelector('[data-k="face"]');
+            if (s) s.value = p.face;
+          });
+          els.script.style.fontFamily = map[p.face] || map.fr;
+        }
+        if (p.pip) state.pipCorner = p.pip;
+        if (p.facing) state.facing = p.facing;
+        syncPlaybackToggles();
+      } catch (e) {}
+    }
+
+    function bindGlobal() {
+      els.btnPlay.addEventListener('click', togglePlay);
+      els.btnReset.addEventListener('click', resetPlay);
+      els.btnCamTop.addEventListener('click', toggleCam);
+      els.btnRecTop.addEventListener('click', toggleRec);
+      els.btnFs.addEventListener('click', goFullscreen);
+
+      els.speed.addEventListener('input', () => {
+        state.speed = +els.speed.value;
+        updateWpmLabel();
+        scheduleSave();
+      });
+
+      let progPointer = false;
+      els.progBar.addEventListener('pointerdown', (e) => {
+        progPointer = true;
+        els.progBar.setPointerCapture(e.pointerId);
+        seekClientX(e.clientX);
+      });
+      els.progBar.addEventListener('pointermove', (e) => {
+        if (progPointer) seekClientX(e.clientX);
+      });
+      els.progBar.addEventListener('pointerup', (e) => {
+        progPointer = false;
+        try { els.progBar.releasePointerCapture(e.pointerId); } catch (x) {}
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.target.closest('textarea') || e.target.closest('input')) return;
+        if (e.code === 'Space') {
+          e.preventDefault();
+          togglePlay();
+        } else if (e.code === 'ArrowUp') {
+          e.preventDefault();
+          state.speed = Math.min(100, state.speed + 5);
+          els.speed.value = String(state.speed);
+          updateWpmLabel();
+          scheduleSave();
+        } else if (e.code === 'ArrowDown') {
+          e.preventDefault();
+          state.speed = Math.max(0, state.speed - 5);
+          els.speed.value = String(state.speed);
+          updateWpmLabel();
+          scheduleSave();
+        } else if (e.code === 'KeyR') resetPlay();
+        else if (e.code === 'KeyF') goFullscreen();
+        else if (e.code === 'KeyC') toggleCam();
+      });
+
+      window.addEventListener('resize', () => requestAnimationFrame(updateMax));
+      if (window.ResizeObserver) {
+        new ResizeObserver(() => updateMax()).observe(els.track);
+        new ResizeObserver(() => updateMax()).observe(els.viewport);
+      }
+
+      els.sheetBackdrop.addEventListener('click', closeSheets);
+      $$('[data-close-sheet]').forEach((b) => b.addEventListener('click', closeSheets));
+
+      els.mobileBar.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-sheet]');
+        if (!btn) return;
+        if (btn.dataset.sheet === 'cam') {
+          buildCamPanel();
+          openSheet('cam');
+        } else openSheet(btn.dataset.sheet);
+      });
+
+      els.tabEditor.addEventListener('click', () => applyTab('editor'));
+      els.tabPrompter.addEventListener('click', () => applyTab('prompter'));
+
+      /* Manual scroll drag on stage while paused */
+      els.stage.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.pip')) return;
+        if (state.playing || state.countdown) return;
+        state.manualDrag = true;
+        state.dragStartY = e.clientY;
+        state.dragStartPos = state.pos;
+        els.stage.setPointerCapture(e.pointerId);
+      });
+      els.stage.addEventListener('pointermove', (e) => {
+        if (!state.manualDrag) return;
+        const dy = e.clientY - state.dragStartY;
+        setPos(state.dragStartPos - dy);
+      });
+      els.stage.addEventListener('pointerup', endDrag);
+      els.stage.addEventListener('pointercancel', endDrag);
+
+      /* Pinch resize font */
+      let pinchDist = null;
+      els.stage.addEventListener(
+        'touchstart',
+        (e) => {
+          if (e.touches.length === 2)
+            pinchDist = Math.hypot(
+              e.touches[1].clientX - e.touches[0].clientX,
+              e.touches[1].clientY - e.touches[0].clientY,
+            );
+        },
+        { passive: true },
+      );
+      els.stage.addEventListener(
+        'touchmove',
+        (e) => {
+          if (e.touches.length !== 2 || pinchDist == null) return;
+          const d = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+          const ratio = d / pinchDist;
+          if (Math.abs(ratio - 1) < 0.03) return;
+          const base = els.settingsRoot.querySelector('[data-k="font"]');
+          if (!base) return;
+          let nv = parseFloat(base.value) * ratio;
+          nv = Math.max(0.65, Math.min(1.65, Math.round(nv * 100) / 100));
+          const sv = String(nv);
+          $$('#settings-root [data-k="font"], #settings-mobile [data-k="font"]').forEach((sl) => {
+            sl.value = sv;
+            sl.dispatchEvent(new Event('input', { bubbles: true }));
+          });
+          pinchDist = d;
+        },
+        { passive: true },
+      );
+      els.stage.addEventListener('touchend', () => { pinchDist = null; }, { passive: true });
+    }
+
+    function endDrag(e) {
+      state.manualDrag = false;
+      try {
+        if (e && e.pointerId != null) els.stage.releasePointerCapture(e.pointerId);
+      } catch (x) {}
+    }
+
+    function syncParallelAfterLoad() {
+      [els.settingsRoot, els.settingsMobile].forEach((p) => {
+        const face = els.settingsRoot.querySelector('[data-k="face"]');
+        const fm = p.querySelector('[data-k="face"]');
+        if (face && fm && fm !== face) fm.value = face.value;
+        ['font', 'lh', 'blur', 'vig'].forEach((k) => {
+          const a = els.settingsRoot.querySelector('[data-k="' + k + '"]');
+          const b = p.querySelector('[data-k="' + k + '"]');
+          if (a && b && a !== b) {
+            b.value = a.value;
+            b.dispatchEvent(new Event('input'));
+          }
+        });
+      });
+    }
+
+    if (prefersReduceMotion()) els.body.classList.add('reduce-motion');
+
+    initSettingsUi();
+    bindTextareas();
+    bindGlobal();
+    loadPrefs();
+    syncParallelAfterLoad();
+    syncText();
+    updateWpmLabel();
+    requestAnimationFrame(updateMax);
+    buildCamPanel();
+    applyTab(window.matchMedia('(max-width:820px)').matches ? 'prompter' : 'editor');
+  })();
+  </script>
 </body>
 </html>
