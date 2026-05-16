@@ -525,6 +525,7 @@
       chunks: [],
       recordBlob: null,
       saveTimer: null,
+      camSwitchBusy: false,
     };
 
     const els = {
@@ -1465,9 +1466,40 @@
       }
     }
 
+    /**
+     * MediaRecorder.stop asenkron: hemen ardından getUserMedia (özellikle mobil)
+     * bazen yarış yapıyor. Kamera çevirmeden önce kaydı sessiz bitirip inactive bekliyoruz.
+     */
+    function waitRecorderSilentlyDetached() {
+      state.recOn = false;
+      els.btnRecTop.setAttribute('aria-pressed', 'false');
+      const rec = state.recorder;
+      if (!rec || rec.state === 'inactive') {
+        state.recorder = null;
+        return Promise.resolve();
+      }
+      return new Promise((resolve) => {
+        const finish = () => {
+          state.recorder = null;
+          resolve();
+        };
+        try {
+          rec.ondataavailable = null;
+          rec.onstop = finish;
+          rec.stop();
+        } catch (_) {
+          finish();
+        }
+      });
+    }
+
     async function switchCameraFacing(nextFacing) {
       if (nextFacing !== 'user' && nextFacing !== 'environment') return;
       if (state.facing === nextFacing) return;
+      if (state.camSwitchBusy) {
+        toast('Kamera geçişi sürüyor…');
+        return;
+      }
       const prevFacing = state.facing;
       state.facing = nextFacing;
       syncCamPanelsFromState();
@@ -1476,9 +1508,10 @@
         updateCamFlipHeadUi();
         return;
       }
-      const wasRec = state.recOn;
-      if (wasRec) stopRec();
+      state.camSwitchBusy = true;
+      const resumeRecording = state.recOn;
       try {
+        if (resumeRecording) await waitRecorderSilentlyDetached();
         const s = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: state.audioOn,
@@ -1491,14 +1524,23 @@
           els.pipVideo.play().catch(() => {}),
           els.camVideoBackdrop.play().catch(() => {}),
         ]);
-        toast(state.facing === 'user' ? 'Ön kamera' : 'Arka kamera');
+        const camLabel = state.facing === 'user' ? 'Ön kamera' : 'Arka kamera';
+        if (resumeRecording) startRec();
+        if (resumeRecording && state.recOn) toast(camLabel + ' — kayıt sürüyor');
+        else if (!resumeRecording) toast(camLabel);
+        else toast(camLabel);
       } catch (e) {
         state.facing = prevFacing;
         syncCamPanelsFromState();
         scheduleSave();
         toast('Bu kamera seçilemedi veya izin yok');
+        if (resumeRecording && state.stream && state.camOn) startRec();
+      } finally {
+        state.camSwitchBusy = false;
+        syncCamPanelsFromState();
+        buildCamPanel();
+        updateCamFlipHeadUi();
       }
-      updateCamFlipHeadUi();
     }
 
     async function flipCam() {
