@@ -168,25 +168,20 @@
         void els.track.offsetHeight;
 
         const focusY = getReadingLineViewportY();
-        const anchorY = getScriptAnchorYInTrack();
-
-        /** Son satır odak çizgisine oturunca translate hedef ofseti */
-        let desiredMax = anchorY - focusY;
+        let desiredMax = getScriptAnchorYInTrack() - focusY;
         if (!Number.isFinite(desiredMax)) desiredMax = 0;
         desiredMax = Math.max(0, desiredMax);
 
-        let H = els.track.scrollHeight;
-        let mechanicalMax = Math.max(0, H - V);
+        let mechanicalMax = Math.max(0, els.track.scrollHeight - V);
+        for (let i = 0; i < 6 && mechanicalMax + 2 < desiredMax; i++) {
+          const gap = desiredMax - mechanicalMax;
+          const prev = parseFloat(els.trackTrailer.style.height) || 0;
+          els.trackTrailer.style.height = prev + Math.max(14, Math.ceil(gap)) + 'px';
+          void els.track.offsetHeight;
+          mechanicalMax = Math.max(0, els.track.scrollHeight - V);
+        }
 
-        let extraPx = desiredMax - mechanicalMax;
-        if (extraPx > 0)
-          els.trackTrailer.style.height = Math.ceil(extraPx + 2) + 'px';
-        else els.trackTrailer.style.height = '0px';
-
-        H = els.track.scrollHeight;
-        mechanicalMax = Math.max(0, H - V);
-        state.max = Math.min(desiredMax, mechanicalMax);
-        state.max = Math.max(0, state.max);
+        state.max = Math.max(0, Math.min(desiredMax, mechanicalMax));
       }
 
       if (state.pos > state.max) {
@@ -278,8 +273,20 @@
         updateProgress();
         return;
       }
+      if (state.max <= 1e-6) {
+        state.pos = 0;
+        applyTransform();
+        updateProgress();
+        pause();
+        return;
+      }
       let next = state.pos + delta;
-      if (next >= state.max) {
+      /** Son karede süblimeşik değerler için (max çok küçükken ~1px tamponla) bitiş yakalaması */
+      const endSnap = Math.min(
+        15,
+        Math.max(1e-2, Math.min(state.max * 0.01, Math.max(state.max * 8e-4, 4))),
+      );
+      if (next >= state.max - endSnap) {
         next = state.max;
         state.pos = next;
         applyTransform();
@@ -301,12 +308,30 @@
       state.loopRaf = requestAnimationFrame(tick);
     }
 
+    /** Oynatta zaten sona gidildiyse (pozisyon max’ta): tekrar oynatmada hemen "sona erdi". */
+    const PLAY_END_EPS = 1;
+
     function startScroll() {
       if (state.speed <= 0) {
         toast('Hız 0 — kaydırma başlamaz');
         return;
       }
       updateMax();
+
+      if (state.max <= 1e-6) {
+        toast('Kaydırılacak metin bulunmadı — birkaç kelime yazın.');
+        return;
+      }
+
+      const atEndNonLoop =
+        !state.loop && state.pos >= state.max - PLAY_END_EPS;
+      if (atEndNonLoop) {
+        state.pos = 0;
+        state.elapsedMs = 0;
+        applyTransform();
+        updateProgress();
+      }
+
       state.playing = true;
       state.lastTs = 0;
       setPlayUi(true);
