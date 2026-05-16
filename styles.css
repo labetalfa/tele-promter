@@ -44,6 +44,7 @@
       padding:7px 14px;font-weight:600;font-size:.82rem;cursor:pointer;transition:color var(--tr),background var(--tr),transform .1s;
     }
     .tabs button[aria-selected="true"]{background:var(--panel);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.05)}
+    .head-leading{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
     .head-actions{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .head-ico{width:22px;height:22px;flex-shrink:0;display:block;pointer-events:none}
     .head-ico.stroke{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -132,6 +133,9 @@
     .stage-wrap.mirror-hv .mirror-shell{transform:scale(-1,-1)}
     .track{
       will-change:transform;transform:translate3d(0,0,0);padding:min(42vh,360px) 8% min(42vh,360px);
+    }
+    .track-trailer{
+      flex-shrink:0;width:100%;pointer-events:none;margin:0;padding:0;
     }
     .script{
       font-family:"Fraunces",Georgia,serif;font-size:var(--fz);line-height:var(--lh);
@@ -283,7 +287,19 @@
       .app-body .panel{display:none!important}
       .mobile-bar{display:flex}
       .transport .meta{display:none}
-      .head-actions{margin-left:auto;gap:6px}
+      /* Üst toolbar: sekme satırı + tam geniş ikon sırası (üst üste binme yok) */
+      .app-head{
+        flex-direction:column;
+        align-items:stretch;
+        gap:10px;padding-bottom:12px;padding-top:max(10px,var(--pad-t));
+      }
+      .head-leading{width:100%;justify-content:space-between;gap:8px}
+      .head-actions{
+        margin-left:0;width:100%;
+        justify-content:space-between;gap:6px;
+        flex-wrap:nowrap;
+      }
+      .head-actions .btn{flex-shrink:0}
       .head-actions .btn .lbl{display:none!important}
       .head-actions .btn{padding:10px;width:48px;height:48px;border-radius:14px;min-height:unset;min-width:unset}
       .head-actions .btn .head-ico{width:24px;height:24px;margin:0}

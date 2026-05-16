@@ -13,13 +13,15 @@
 </head>
 <body>
   <header class="app-head">
-    <div class="brand" aria-label="FlowPrompter">
-      <div class="brand-mark" aria-hidden="true"></div>
-      <span>FlowPrompter</span>
-    </div>
-    <div class="tabs" role="tablist" aria-label="Görünüm">
-      <button type="button" role="tab" id="tab-editor" aria-selected="true" data-tab="editor">Editör</button>
-      <button type="button" role="tab" id="tab-prompter" aria-selected="false" data-tab="prompter">Kaydır</button>
+    <div class="head-leading">
+      <div class="brand" aria-label="FlowPrompter">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <span>FlowPrompter</span>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Görünüm">
+        <button type="button" role="tab" id="tab-editor" aria-selected="true" data-tab="editor">Editör</button>
+        <button type="button" role="tab" id="tab-prompter" aria-selected="false" data-tab="prompter">Kaydır</button>
+      </div>
     </div>
     <div class="head-actions">
       <button type="button" class="btn small primary" id="btn-cam-top" aria-pressed="false" title="Kamerayı aç veya kapat" aria-label="Kamerayı aç veya kapat">
@@ -62,6 +64,7 @@
           <div class="mirror-shell" id="mirrorShell">
             <div class="track" id="track">
               <div class="script" id="script"></div>
+              <div class="track-trailer" id="trackTrailer" aria-hidden="true"></div>
             </div>
           </div>
         </div>

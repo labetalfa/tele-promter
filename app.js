@@ -59,7 +59,10 @@
       stage: $('#stage'),
       viewport: $('#viewport'),
       track: $('#track'),
+      mirrorShell: $('#mirrorShell'),
       script: $('#script'),
+      trackTrailer: $('#trackTrailer'),
+      readingLayer: $('#readingLayer'),
       blurTop: $('#blurTop'),
       blurBot: $('#blurBot'),
       rlTop: $('#rlTop'),
@@ -122,8 +125,74 @@
       return Math.round(70 + (spd / 100) * 150);
     }
 
+    function getReadingLineViewportY() {
+      const line = els.readingLayer && els.readingLayer.querySelector('.rl-line');
+      const V = els.viewport.clientHeight || 0;
+      if (!line || !V) return V * 0.5;
+      const vr = els.viewport.getBoundingClientRect();
+      const lr = line.getBoundingClientRect();
+      const y = lr.top + lr.height / 2 - vr.top;
+      return Math.max(4, Math.min(V - 4, y));
+    }
+
+    function getScriptAnchorYInTrack() {
+      const t = els.track;
+      const s = els.script;
+      const tr = t.getBoundingClientRect();
+      const text = (s.textContent || '').trim();
+      if (!text) {
+        const lh = parseFloat(getComputedStyle(s).lineHeight);
+        const linePx = Number.isFinite(lh) ? lh : 24;
+        return Math.max(linePx * 0.5, Math.min(tr.height, linePx));
+      }
+      let br;
+      try {
+        const r = document.createRange();
+        r.selectNodeContents(s);
+        r.collapse(false);
+        br = r.getBoundingClientRect();
+      } catch (e) {
+        br = s.getBoundingClientRect();
+      }
+      if (!(br.height > 0 || br.width > 0))
+        br = s.getBoundingClientRect();
+      return br.top + br.height / 2 - tr.top;
+    }
+
     function updateMax() {
-      state.max = Math.max(0, els.track.scrollHeight - els.viewport.clientHeight);
+      const V = els.viewport.clientHeight;
+      if (!V || !els.trackTrailer) {
+        state.max = Math.max(0, els.track.scrollHeight - V);
+      } else {
+        els.trackTrailer.style.height = '0px';
+        void els.track.offsetHeight;
+
+        const focusY = getReadingLineViewportY();
+        const anchorY = getScriptAnchorYInTrack();
+
+        /** Son satır odak çizgisine oturunca translate hedef ofseti */
+        let desiredMax = anchorY - focusY;
+        if (!Number.isFinite(desiredMax)) desiredMax = 0;
+        desiredMax = Math.max(0, desiredMax);
+
+        let H = els.track.scrollHeight;
+        let mechanicalMax = Math.max(0, H - V);
+
+        let extraPx = desiredMax - mechanicalMax;
+        if (extraPx > 0)
+          els.trackTrailer.style.height = Math.ceil(extraPx + 2) + 'px';
+        else els.trackTrailer.style.height = '0px';
+
+        H = els.track.scrollHeight;
+        mechanicalMax = Math.max(0, H - V);
+        state.max = Math.min(desiredMax, mechanicalMax);
+        state.max = Math.max(0, state.max);
+      }
+
+      if (state.pos > state.max) {
+        state.pos = state.max;
+        applyTransform();
+      }
       updateProgress();
     }
 
@@ -302,6 +371,7 @@
       document.documentElement.style.setProperty('--band-h', 'clamp(52px, ' + h + 'px, 280px)');
       document.documentElement.style.setProperty('--rl-line-h', th + 'px');
       document.documentElement.style.setProperty('--band-fill-op', String(state.bandFillOpacity));
+      requestAnimationFrame(updateMax);
     }
 
     function applyFillGlow() {
@@ -787,6 +857,7 @@
       [els.settingsRoot, els.settingsMobile].forEach((p) => {
         p.querySelectorAll('[data-band]').forEach((b) => b.classList.toggle('on', b.dataset.band === pos));
       });
+      requestAnimationFrame(updateMax);
     }
 
     function setMirror(m, root) {
@@ -1336,6 +1407,9 @@
       });
 
       window.addEventListener('resize', () => requestAnimationFrame(updateMax));
+      if (window.ResizeObserver && els.readingLayer) {
+        new ResizeObserver(() => requestAnimationFrame(updateMax)).observe(els.readingLayer);
+      }
       if (window.ResizeObserver) {
         new ResizeObserver(() => updateMax()).observe(els.track);
         new ResizeObserver(() => updateMax()).observe(els.viewport);
