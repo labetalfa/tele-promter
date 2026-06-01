@@ -21,6 +21,7 @@
       --blur:8px;--vignette:.88;
       --fz:clamp(22px, 2.35vw + 14px, 52px);--lh:1.52;
       --tr:.18s cubic-bezier(.2,.8,.2,1);
+      --dock-h:140px;
     }
     body.theme-amber{--stage-bg:#0a0702;--stage-fg:#ffd48a;--band:rgba(255,212,138,.14);--band-line:rgba(255,212,138,.72)}
     body.theme-studio{--stage-bg:#000;--stage-fg:#fff;--band:rgba(255,255,255,.1);--band-line:rgba(255,255,255,.55)}
@@ -202,13 +203,22 @@
     /* Mobil: sahne üstünde kamera ön↔arka (sadece kamera açıkken görünür) */
     .cam-switch-fab{
       display:none;position:absolute;z-index:35;right:max(12px,env(safe-area-inset-right));
-      bottom:calc(132px + env(safe-area-inset-bottom));align-items:center;justify-content:center;flex-direction:column;gap:2px;
+      bottom:calc(var(--dock-h, 140px) + 12px + env(safe-area-inset-bottom));align-items:center;justify-content:center;flex-direction:column;gap:2px;
       width:62px;padding:10px 6px;border-radius:16px;cursor:pointer;
       border:2px solid var(--accent);background:rgba(8,8,12,.92);color:var(--accent);
       box-shadow:0 8px 28px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);touch-action:manipulation;
     }
     .cam-switch-fab svg{width:26px;height:26px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
     .cam-switch-fab .fab-cap{font-size:.58rem;font-weight:700;letter-spacing:.02em;line-height:1;text-align:center;color:var(--text);max-width:100%}
+
+    .fs-exit{
+      display:none;position:fixed;z-index:220;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));
+      padding:10px 14px;border-radius:12px;border:1px solid rgba(232,184,74,.55);background:rgba(8,8,12,.88);color:var(--accent);
+      font-weight:700;font-size:.78rem;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      box-shadow:0 8px 28px rgba(0,0,0,.45);
+    }
+    :fullscreen .fs-exit:not([hidden]),:-webkit-full-screen .fs-exit:not([hidden]){display:block}
+    html.is-fullscreen .fs-exit:not([hidden]){display:block}
 
     /* Transport */
     .transport{
@@ -270,7 +280,7 @@
     .countdown span{font-size:clamp(72px,18vw,140px);font-weight:800;color:var(--accent);text-shadow:0 0 60px rgba(232,184,74,.45)}
 
     .toast{
-      position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(10px);
+      position:fixed;left:50%;bottom:calc(var(--dock-h, 140px) + 16px);transform:translateX(-50%) translateY(10px);
       background:var(--elev);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:999px;
       font-size:.85rem;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:200;max-width:min(92vw,420px);text-align:center;
     }
@@ -300,8 +310,10 @@
         flex-wrap:nowrap;
       }
       .head-actions .btn{flex-shrink:0}
+      /* Mobilde çevir yalnızca yüzen düğmede (üst bar taşmasın) */
+      #btn-flip-cam-head{display:none!important}
+      .head-actions .btn{padding:8px;width:44px;height:44px;border-radius:12px;min-height:unset;min-width:unset}
       .head-actions .btn .lbl{display:none!important}
-      .head-actions .btn{padding:10px;width:48px;height:48px;border-radius:14px;min-height:unset;min-width:unset}
       .head-actions .btn .head-ico{width:24px;height:24px;margin:0}
       .head-actions .btn.small.primary{background:linear-gradient(180deg,#f0cd6a,var(--accent));border:none;color:#1a1406;box-shadow:0 4px 16px rgba(232,184,74,.35)}
       .head-actions .btn.small.primary .head-ico{fill:#1a1406;stroke:none}

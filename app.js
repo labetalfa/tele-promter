@@ -52,6 +52,9 @@
       recordBlob: null,
       saveTimer: null,
       camSwitchBusy: false,
+      camOpenBusy: false,
+      camOpenToken: 0,
+      countdownTimeouts: [],
     };
 
     const els = {
@@ -105,6 +108,8 @@
       btnRecTop: $('#btn-rec-top'),
       btnFs: $('#btn-fs'),
       mobFlipFab: $('#mob-flip-cam-fab'),
+      fsExit: $('#fs-exit'),
+      transport: $('#transport'),
     };
 
     function toast(msg) {
@@ -136,32 +141,23 @@
     }
 
     function getScriptAnchorYInTrack() {
-      const t = els.track;
       const s = els.script;
-      const tr = t.getBoundingClientRect();
       const text = (s.textContent || '').trim();
-      if (!text) {
-        const lh = parseFloat(getComputedStyle(s).lineHeight);
-        const linePx = Number.isFinite(lh) ? lh : 24;
-        return Math.max(linePx * 0.5, Math.min(tr.height, linePx));
-      }
-      let br;
-      try {
-        const r = document.createRange();
-        r.selectNodeContents(s);
-        r.collapse(false);
-        br = r.getBoundingClientRect();
-      } catch (e) {
-        br = s.getBoundingClientRect();
-      }
-      if (!(br.height > 0 || br.width > 0))
-        br = s.getBoundingClientRect();
-      return br.top + br.height / 2 - tr.top;
+      const cs = getComputedStyle(s);
+      const lhRaw = parseFloat(cs.lineHeight);
+      const linePx = Number.isFinite(lhRaw) ? lhRaw : (parseFloat(cs.fontSize) || 24) * 1.52;
+      if (!text) return Math.max(linePx * 0.5, 8);
+      /** offsetTop transform’dan etkilenmez; getBoundingClientRect kaydırma sırasında bozulur */
+      const top = s.offsetTop;
+      const h = s.offsetHeight;
+      return top + Math.max(linePx * 0.5, h - linePx * 0.5);
     }
 
     function updateMax() {
       const V = els.viewport.clientHeight;
-      if (!V || !els.trackTrailer) {
+      if (V <= 0) return;
+
+      if (!els.trackTrailer) {
         state.max = Math.max(0, els.track.scrollHeight - V);
       } else {
         els.trackTrailer.style.height = '0px';
@@ -173,10 +169,10 @@
         desiredMax = Math.max(0, desiredMax);
 
         let mechanicalMax = Math.max(0, els.track.scrollHeight - V);
-        for (let i = 0; i < 6 && mechanicalMax + 2 < desiredMax; i++) {
+        for (let i = 0; i < 16 && mechanicalMax + 1 < desiredMax; i++) {
           const gap = desiredMax - mechanicalMax;
           const prev = parseFloat(els.trackTrailer.style.height) || 0;
-          els.trackTrailer.style.height = prev + Math.max(14, Math.ceil(gap)) + 'px';
+          els.trackTrailer.style.height = prev + Math.max(16, Math.ceil(gap + 4)) + 'px';
           void els.track.offsetHeight;
           mechanicalMax = Math.max(0, els.track.scrollHeight - V);
         }
@@ -188,6 +184,13 @@
         state.pos = state.max;
         applyTransform();
       }
+      updateProgress();
+    }
+
+    function snapScrollToEnd() {
+      updateMax();
+      state.pos = state.max;
+      applyTransform();
       updateProgress();
     }
 
@@ -215,8 +218,18 @@
         : 'M8 5v14l11-7z';
       els.btnPlay.querySelector('path').setAttribute('d', path);
       els.btnPlay.setAttribute('aria-pressed', String(playing));
+      els.btnPlay.setAttribute('aria-label', playing ? 'Durdur' : 'Oynat');
       els.stage.classList.toggle('playing', playing);
       els.statusDot.className = 'status-dot' + (playing ? ' running' : state.pos > 2 ? ' paused-at' : '');
+    }
+
+    function cancelCountdown() {
+      state.countdownTimeouts.forEach((id) => clearTimeout(id));
+      state.countdownTimeouts = [];
+      if (!state.countdown) return;
+      state.countdown = false;
+      els.countdown.classList.remove('on');
+      els.countdown.setAttribute('aria-hidden', 'true');
     }
 
     function syncText() {
@@ -269,8 +282,8 @@
       const pxPerSec = (state.speed / 100) * fs * 2.65;
       const delta = (pxPerSec * dt) / 1000;
       if (state.speed <= 0) {
-        state.loopRaf = requestAnimationFrame(tick);
-        updateProgress();
+        pause();
+        toast('Hız 0 — kaydırma durdu');
         return;
       }
       if (state.max <= 1e-6) {
@@ -280,20 +293,14 @@
         pause();
         return;
       }
-      let next = state.pos + delta;
-      /** Son karede süblimeşik değerler için (max çok küçükken ~1px tamponla) bitiş yakalaması */
-      const endSnap = Math.min(
-        15,
-        Math.max(1e-2, Math.min(state.max * 0.01, Math.max(state.max * 8e-4, 4))),
-      );
-      if (next >= state.max - endSnap) {
-        next = state.max;
-        state.pos = next;
-        applyTransform();
-        updateProgress();
+      const next = state.pos + delta;
+      if (next >= state.max) {
+        snapScrollToEnd();
         if (state.loop) {
           state.pos = 0;
+          state.elapsedMs = 0;
           applyTransform();
+          updateProgress();
           state.lastTs = 0;
         } else {
           pause();
@@ -343,26 +350,33 @@
         startScroll();
         return;
       }
+      cancelCountdown();
       state.countdown = true;
       els.countdown.classList.add('on');
+      els.countdown.setAttribute('aria-hidden', 'false');
       let n = 3;
       els.cdNum.textContent = String(n);
       const step = () => {
+        if (!state.countdown) return;
         n--;
         if (n <= 0) {
           els.countdown.classList.remove('on');
+          els.countdown.setAttribute('aria-hidden', 'true');
           state.countdown = false;
           startScroll();
         } else {
           els.cdNum.textContent = String(n);
-          setTimeout(step, 900);
+          state.countdownTimeouts.push(setTimeout(step, 900));
         }
       };
-      setTimeout(step, 900);
+      state.countdownTimeouts.push(setTimeout(step, 900));
     }
 
     function togglePlay() {
-      if (state.countdown) return;
+      if (state.countdown) {
+        cancelCountdown();
+        return;
+      }
       if (state.playing) {
         pause();
         return;
@@ -372,11 +386,8 @@
     }
 
     function resetPlay() {
+      cancelCountdown();
       pause();
-      if (state.countdown) {
-        state.countdown = false;
-        els.countdown.classList.remove('on');
-      }
       state.pos = 0;
       state.elapsedMs = 0;
       applyTransform();
@@ -572,7 +583,7 @@
           <label>Oynatma</label>
           <div class="row" style="margin-bottom:8px">
             <span class="meta">Geri sayım</span>
-            <button type="button" class="chip" data-action="toggle-cd" aria-pressed="true">Açık</button>
+            <button type="button" class="chip on" data-action="toggle-cd" aria-pressed="true">Açık</button>
           </div>
           <div class="row">
             <span class="meta">Döngü</span>
@@ -719,6 +730,7 @@
         state.countdownEnabled = !state.countdownEnabled;
         e.currentTarget.setAttribute('aria-pressed', String(state.countdownEnabled));
         e.currentTarget.textContent = state.countdownEnabled ? 'Açık' : 'Kapalı';
+        e.currentTarget.classList.toggle('on', state.countdownEnabled);
         mirrorChip(root, e.currentTarget);
         scheduleSave();
       });
@@ -949,11 +961,17 @@
         els.panelEditor.hidden = !ed;
         els.panelSettings.hidden = false;
       }
-      requestAnimationFrame(updateMax);
+      requestAnimationFrame(() => {
+        updateMax();
+        updateDockMetrics();
+      });
     }
 
     async function toggleCam() {
+      if (state.camOpenBusy) return;
       if (state.camOn) return stopCam();
+      const token = ++state.camOpenToken;
+      state.camOpenBusy = true;
       els.pip.hidden = false;
       els.camBackdrop.style.visibility = 'hidden';
       els.pipPh.style.display = 'flex';
@@ -964,6 +982,10 @@
           video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: state.audioOn,
         });
+        if (token !== state.camOpenToken) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
+        }
         state.stream = s;
         state.camOn = true;
         els.pipVideo.srcObject = s;
@@ -972,6 +994,12 @@
           els.pipVideo.play().catch(() => {}),
           els.camVideoBackdrop.play().catch(() => {}),
         ]);
+        if (token !== state.camOpenToken) {
+          s.getTracks().forEach((t) => t.stop());
+          state.stream = null;
+          state.camOn = false;
+          return;
+        }
         els.pipPh.style.display = 'none';
         els.pipVideo.style.display = 'block';
         els.btnCamTop.setAttribute('aria-pressed', 'true');
@@ -981,17 +1009,25 @@
         updateCamFlipHeadUi();
         toast('Kamera hazır');
       } catch (e) {
-        els.pip.hidden = true;
-        els.camVideoBackdrop.srcObject = null;
-        state.camOn = false;
-        updateCamFlipHeadUi();
-        toast('Kamera izni gerekli');
+        if (token === state.camOpenToken) {
+          els.pip.hidden = true;
+          els.camVideoBackdrop.srcObject = null;
+          state.camOn = false;
+          updateCamFlipHeadUi();
+          toast('Kamera izni gerekli');
+        }
+      } finally {
+        if (token === state.camOpenToken) {
+          state.camOpenBusy = false;
+          buildCamPanel();
+          scheduleSave();
+        }
       }
-      buildCamPanel();
-      scheduleSave();
     }
 
     function stopCam() {
+      state.camOpenToken++;
+      state.camOpenBusy = false;
       if (state.recOn) stopRec();
       if (state.stream) {
         state.stream.getTracks().forEach((t) => t.stop());
@@ -1026,10 +1062,19 @@
       const recBtn = els.camMobile.querySelector('[data-rec-toggle]');
       if (recBtn) recBtn.addEventListener('click', () => toggleRec());
       els.camMobile.querySelector('[data-audio]').addEventListener('click', (e) => {
-        state.audioOn = !state.audioOn;
+        const wantAudio = !state.audioOn;
+        state.audioOn = wantAudio;
         e.currentTarget.textContent = state.audioOn ? 'Kayıtta ses açık' : 'Kayıtta ses kapalı';
         e.currentTarget.classList.toggle('on', state.audioOn);
-        if (state.stream) state.stream.getAudioTracks().forEach((t) => (t.enabled = state.audioOn));
+        if (state.stream) {
+          const tracks = state.stream.getAudioTracks();
+          if (tracks.length) {
+            tracks.forEach((t) => (t.enabled = state.audioOn));
+          } else if (state.audioOn && state.camOn) {
+            toast('Ses için kamera yeniden açılıyor…');
+            void refreshCamStream();
+          }
+        }
         scheduleSave();
       });
       syncCamPanelsFromState();
@@ -1088,6 +1133,34 @@
       }
     }
 
+    async function refreshCamStream() {
+      if (!state.camOn || state.camSwitchBusy || state.camOpenBusy) return;
+      state.camSwitchBusy = true;
+      const wasRec = state.recOn;
+      try {
+        if (wasRec) await waitRecorderSilentlyDetached();
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: state.audioOn,
+        });
+        if (state.stream) state.stream.getTracks().forEach((t) => t.stop());
+        state.stream = s;
+        els.pipVideo.srcObject = s;
+        els.camVideoBackdrop.srcObject = s;
+        await Promise.all([
+          els.pipVideo.play().catch(() => {}),
+          els.camVideoBackdrop.play().catch(() => {}),
+        ]);
+        if (wasRec) startRec();
+      } catch (_) {
+        toast('Kamera akışı yenilenemedi');
+        if (wasRec && state.stream) startRec();
+      } finally {
+        state.camSwitchBusy = false;
+        buildCamPanel();
+      }
+    }
+
     /**
      * MediaRecorder.stop asenkron: hemen ardından getUserMedia (özellikle mobil)
      * bazen yarış yapıyor. Kamera çevirmeden önce kaydı sessiz bitirip inactive bekliyoruz.
@@ -1133,7 +1206,10 @@
       state.camSwitchBusy = true;
       const resumeRecording = state.recOn;
       try {
-        if (resumeRecording) await waitRecorderSilentlyDetached();
+        if (resumeRecording) {
+          toast('Kayıt yeni kamerayla yeniden başlıyor');
+          await waitRecorderSilentlyDetached();
+        }
         const s = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: state.audioOn,
@@ -1148,9 +1224,7 @@
         ]);
         const camLabel = state.facing === 'user' ? 'Ön kamera' : 'Arka kamera';
         if (resumeRecording) startRec();
-        if (resumeRecording && state.recOn) toast(camLabel + ' — kayıt sürüyor');
-        else if (!resumeRecording) toast(camLabel);
-        else toast(camLabel);
+        toast(resumeRecording && state.recOn ? camLabel + ' — kayıt sürüyor' : camLabel);
       } catch (e) {
         state.facing = prevFacing;
         syncCamPanelsFromState();
@@ -1219,16 +1293,33 @@
       setTimeout(() => URL.revokeObjectURL(u), 4000);
     }
 
+    function syncFullscreenUi() {
+      const fs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      els.btnFs.setAttribute('aria-pressed', String(fs));
+      if (els.fsExit) els.fsExit.hidden = !fs;
+      document.documentElement.classList.toggle('is-fullscreen', fs);
+    }
+
     function goFullscreen() {
       const el = document.documentElement;
       const fs = document.fullscreenElement || document.webkitFullscreenElement;
       if (!fs) {
         const req = el.requestFullscreen || el.webkitRequestFullscreen;
-        if (req) req.call(el);
+        if (req) {
+          Promise.resolve(req.call(el)).catch(() => toast('Tam ekran desteklenmiyor'));
+        } else toast('Tam ekran desteklenmiyor');
       } else {
         const ex = document.exitFullscreen || document.webkitExitFullscreen;
         if (ex) ex.call(document);
       }
+    }
+
+    function updateDockMetrics() {
+      let h = 0;
+      if (els.transport) h += els.transport.offsetHeight || 0;
+      if (els.mobileBar && getComputedStyle(els.mobileBar).display !== 'none')
+        h += els.mobileBar.offsetHeight || 0;
+      document.documentElement.style.setProperty('--dock-h', Math.max(72, h) + 'px');
     }
 
     function scheduleSave() {
@@ -1276,6 +1367,7 @@
         if (cd) {
           cd.setAttribute('aria-pressed', String(state.countdownEnabled));
           cd.textContent = state.countdownEnabled ? 'Açık' : 'Kapalı';
+          cd.classList.toggle('on', state.countdownEnabled);
         }
         const lp = p.querySelector('[data-action="toggle-loop"]');
         if (lp) {
@@ -1382,11 +1474,16 @@
       if (els.mobFlipFab)
         els.mobFlipFab.addEventListener('click', () => void flipCam());
       els.btnFs.addEventListener('click', goFullscreen);
+      if (els.fsExit) els.fsExit.addEventListener('click', goFullscreen);
 
       els.speed.addEventListener('input', () => {
         state.speed = +els.speed.value;
         updateWpmLabel();
         scheduleSave();
+        if (state.playing && state.speed <= 0) {
+          pause();
+          toast('Hız 0 — kaydırma durdu');
+        }
       });
 
       let progPointer = false;
@@ -1405,8 +1502,23 @@
       els.progBar.addEventListener('pointercancel', () => {
         progPointer = false;
       });
+      els.progBar.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          const step = state.max * 0.02;
+          setPos(state.pos + (e.key === 'ArrowRight' ? step : -step));
+        }
+      });
 
       document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (Object.values(els.sheets).some((sh) => sh.classList.contains('open'))) {
+            closeSheets();
+            return;
+          }
+          const fs = document.fullscreenElement || document.webkitFullscreenElement;
+          if (fs) goFullscreen();
+        }
         if (e.target.closest('textarea') || e.target.closest('input')) return;
         if (e.code === 'Space') {
           e.preventDefault();
@@ -1431,13 +1543,20 @@
         else if (e.code === 'KeyC') toggleCam();
       });
 
-      window.addEventListener('resize', () => requestAnimationFrame(updateMax));
+      window.addEventListener('resize', () => {
+        requestAnimationFrame(updateMax);
+        updateDockMetrics();
+      });
+      document.addEventListener('fullscreenchange', syncFullscreenUi);
+      document.addEventListener('webkitfullscreenchange', syncFullscreenUi);
       if (window.ResizeObserver && els.readingLayer) {
         new ResizeObserver(() => requestAnimationFrame(updateMax)).observe(els.readingLayer);
       }
       if (window.ResizeObserver) {
         new ResizeObserver(() => updateMax()).observe(els.track);
         new ResizeObserver(() => updateMax()).observe(els.viewport);
+        if (els.transport) new ResizeObserver(() => updateDockMetrics()).observe(els.transport);
+        if (els.mobileBar) new ResizeObserver(() => updateDockMetrics()).observe(els.mobileBar);
       }
 
       els.sheetBackdrop.addEventListener('click', closeSheets);
@@ -1541,6 +1660,8 @@
     syncParallelAfterLoad();
     syncText();
     updateWpmLabel();
+    updateDockMetrics();
+    syncFullscreenUi();
     requestAnimationFrame(updateMax);
     applyFocusChrome();
     syncCamPanelsFromState();
